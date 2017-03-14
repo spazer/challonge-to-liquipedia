@@ -35,8 +35,22 @@
             this.label2 = new System.Windows.Forms.Label();
             this.textBoxURL = new System.Windows.Forms.TextBox();
             this.label3 = new System.Windows.Forms.Label();
+            this.richTextBoxWinnersInput = new System.Windows.Forms.RichTextBox();
+            this.richTextBoxLosersInput = new System.Windows.Forms.RichTextBox();
+            this.buttonFill = new System.Windows.Forms.Button();
             this.richTextBoxOutput = new System.Windows.Forms.RichTextBox();
-            this.richTextBoxMatches = new System.Windows.Forms.RichTextBox();
+            this.numericUpDownWinnersStart = new System.Windows.Forms.NumericUpDown();
+            this.numericUpDownWinnersEnd = new System.Windows.Forms.NumericUpDown();
+            this.numericUpDownWinnersOffset = new System.Windows.Forms.NumericUpDown();
+            this.numericUpDownLosersOffset = new System.Windows.Forms.NumericUpDown();
+            this.numericUpDownLosersEnd = new System.Windows.Forms.NumericUpDown();
+            this.numericUpDownLosersStart = new System.Windows.Forms.NumericUpDown();
+            ((System.ComponentModel.ISupportInitialize)(this.numericUpDownWinnersStart)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.numericUpDownWinnersEnd)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.numericUpDownWinnersOffset)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.numericUpDownLosersOffset)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.numericUpDownLosersEnd)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.numericUpDownLosersStart)).BeginInit();
             this.SuspendLayout();
             // 
             // textBoxPassword
@@ -55,7 +69,7 @@
             this.buttonRetrieve.TabIndex = 1;
             this.buttonRetrieve.Text = "Retrieve";
             this.buttonRetrieve.UseVisualStyleBackColor = true;
-            this.buttonRetrieve.Click += new System.EventHandler(this.button1_Click);
+            this.buttonRetrieve.Click += new System.EventHandler(this.buttonRetrieve_Click);
             // 
             // textBoxUsername
             // 
@@ -98,28 +112,106 @@
             this.label3.TabIndex = 2;
             this.label3.Text = "Challonge URL";
             // 
+            // richTextBoxWinnersInput
+            // 
+            this.richTextBoxWinnersInput.Location = new System.Drawing.Point(12, 156);
+            this.richTextBoxWinnersInput.Name = "richTextBoxWinnersInput";
+            this.richTextBoxWinnersInput.Size = new System.Drawing.Size(341, 124);
+            this.richTextBoxWinnersInput.TabIndex = 4;
+            this.richTextBoxWinnersInput.Text = "";
+            // 
+            // richTextBoxLosersInput
+            // 
+            this.richTextBoxLosersInput.Location = new System.Drawing.Point(360, 156);
+            this.richTextBoxLosersInput.Name = "richTextBoxLosersInput";
+            this.richTextBoxLosersInput.Size = new System.Drawing.Size(341, 124);
+            this.richTextBoxLosersInput.TabIndex = 3;
+            this.richTextBoxLosersInput.Text = "";
+            // 
+            // buttonFill
+            // 
+            this.buttonFill.Location = new System.Drawing.Point(349, 100);
+            this.buttonFill.Name = "buttonFill";
+            this.buttonFill.Size = new System.Drawing.Size(75, 23);
+            this.buttonFill.TabIndex = 5;
+            this.buttonFill.Text = "Fill";
+            this.buttonFill.UseVisualStyleBackColor = true;
+            this.buttonFill.Click += new System.EventHandler(this.buttonFill_Click);
+            // 
             // richTextBoxOutput
             // 
-            this.richTextBoxOutput.Location = new System.Drawing.Point(15, 154);
+            this.richTextBoxOutput.Location = new System.Drawing.Point(12, 306);
             this.richTextBoxOutput.Name = "richTextBoxOutput";
-            this.richTextBoxOutput.Size = new System.Drawing.Size(409, 211);
+            this.richTextBoxOutput.Size = new System.Drawing.Size(689, 151);
             this.richTextBoxOutput.TabIndex = 3;
             this.richTextBoxOutput.Text = "";
             // 
-            // richTextBoxMatches
+            // numericUpDownWinnersStart
             // 
-            this.richTextBoxMatches.Location = new System.Drawing.Point(443, 154);
-            this.richTextBoxMatches.Name = "richTextBoxMatches";
-            this.richTextBoxMatches.Size = new System.Drawing.Size(280, 211);
-            this.richTextBoxMatches.TabIndex = 3;
-            this.richTextBoxMatches.Text = "";
+            this.numericUpDownWinnersStart.Location = new System.Drawing.Point(227, 130);
+            this.numericUpDownWinnersStart.Name = "numericUpDownWinnersStart";
+            this.numericUpDownWinnersStart.Size = new System.Drawing.Size(38, 20);
+            this.numericUpDownWinnersStart.TabIndex = 6;
+            // 
+            // numericUpDownWinnersEnd
+            // 
+            this.numericUpDownWinnersEnd.Location = new System.Drawing.Point(271, 130);
+            this.numericUpDownWinnersEnd.Name = "numericUpDownWinnersEnd";
+            this.numericUpDownWinnersEnd.Size = new System.Drawing.Size(38, 20);
+            this.numericUpDownWinnersEnd.TabIndex = 7;
+            // 
+            // numericUpDownWinnersOffset
+            // 
+            this.numericUpDownWinnersOffset.Location = new System.Drawing.Point(315, 130);
+            this.numericUpDownWinnersOffset.Minimum = new decimal(new int[] {
+            100,
+            0,
+            0,
+            -2147483648});
+            this.numericUpDownWinnersOffset.Name = "numericUpDownWinnersOffset";
+            this.numericUpDownWinnersOffset.Size = new System.Drawing.Size(38, 20);
+            this.numericUpDownWinnersOffset.TabIndex = 8;
+            // 
+            // numericUpDownLosersOffset
+            // 
+            this.numericUpDownLosersOffset.Location = new System.Drawing.Point(663, 130);
+            this.numericUpDownLosersOffset.Minimum = new decimal(new int[] {
+            100,
+            0,
+            0,
+            -2147483648});
+            this.numericUpDownLosersOffset.Name = "numericUpDownLosersOffset";
+            this.numericUpDownLosersOffset.Size = new System.Drawing.Size(38, 20);
+            this.numericUpDownLosersOffset.TabIndex = 11;
+            // 
+            // numericUpDownLosersEnd
+            // 
+            this.numericUpDownLosersEnd.Location = new System.Drawing.Point(619, 130);
+            this.numericUpDownLosersEnd.Name = "numericUpDownLosersEnd";
+            this.numericUpDownLosersEnd.Size = new System.Drawing.Size(38, 20);
+            this.numericUpDownLosersEnd.TabIndex = 10;
+            // 
+            // numericUpDownLosersStart
+            // 
+            this.numericUpDownLosersStart.Location = new System.Drawing.Point(575, 130);
+            this.numericUpDownLosersStart.Name = "numericUpDownLosersStart";
+            this.numericUpDownLosersStart.Size = new System.Drawing.Size(38, 20);
+            this.numericUpDownLosersStart.TabIndex = 9;
             // 
             // FormMain
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(735, 469);
-            this.Controls.Add(this.richTextBoxMatches);
+            this.ClientSize = new System.Drawing.Size(713, 469);
+            this.Controls.Add(this.numericUpDownLosersOffset);
+            this.Controls.Add(this.numericUpDownLosersEnd);
+            this.Controls.Add(this.numericUpDownLosersStart);
+            this.Controls.Add(this.numericUpDownWinnersOffset);
+            this.Controls.Add(this.numericUpDownWinnersEnd);
+            this.Controls.Add(this.numericUpDownWinnersStart);
+            this.Controls.Add(this.buttonFill);
+            this.Controls.Add(this.richTextBoxWinnersInput);
+            this.Controls.Add(this.richTextBoxLosersInput);
             this.Controls.Add(this.richTextBoxOutput);
             this.Controls.Add(this.label2);
             this.Controls.Add(this.label3);
@@ -131,6 +223,12 @@
             this.Name = "FormMain";
             this.Text = "Challonge to Liquipedia";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.Form1_FormClosing);
+            ((System.ComponentModel.ISupportInitialize)(this.numericUpDownWinnersStart)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.numericUpDownWinnersEnd)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.numericUpDownWinnersOffset)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.numericUpDownLosersOffset)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.numericUpDownLosersEnd)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.numericUpDownLosersStart)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -145,8 +243,16 @@
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.TextBox textBoxURL;
         private System.Windows.Forms.Label label3;
+        private System.Windows.Forms.RichTextBox richTextBoxWinnersInput;
+        private System.Windows.Forms.RichTextBox richTextBoxLosersInput;
+        private System.Windows.Forms.Button buttonFill;
         private System.Windows.Forms.RichTextBox richTextBoxOutput;
-        private System.Windows.Forms.RichTextBox richTextBoxMatches;
+        private System.Windows.Forms.NumericUpDown numericUpDownWinnersStart;
+        private System.Windows.Forms.NumericUpDown numericUpDownWinnersEnd;
+        private System.Windows.Forms.NumericUpDown numericUpDownWinnersOffset;
+        private System.Windows.Forms.NumericUpDown numericUpDownLosersOffset;
+        private System.Windows.Forms.NumericUpDown numericUpDownLosersEnd;
+        private System.Windows.Forms.NumericUpDown numericUpDownLosersStart;
     }
 }
 
