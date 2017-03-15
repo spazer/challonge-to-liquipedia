@@ -18,8 +18,9 @@ namespace challonge_to_liquipedia
     {
         static string BASE_URI = "https://api.challonge.com/v1/tournaments/";
         static string EXTENSION_URI = ".json";
-        
-        Dictionary<int, List<challonge_to_liquipedia.JSON_Structure.Match>> roundList = new Dictionary<int, List<challonge_to_liquipedia.JSON_Structure.Match>>();
+        static int PLAYER_BYE = 0;
+
+        Dictionary<int, List<JSON_Structure.Match>> roundList = new Dictionary<int, List<JSON_Structure.Match>>();
         Dictionary<int, Entrant> entrantList = new Dictionary<int, Entrant>();
 
         #region Form
@@ -65,6 +66,10 @@ namespace challonge_to_liquipedia
 
         private void buttonRetrieve_Click(object sender, EventArgs e)
         {
+            // Clear existing data
+            roundList.Clear();
+            entrantList.Clear();
+
             WebClient client = new WebClient { Credentials = new NetworkCredential(textBoxUsername.Text, textBoxPassword.Text) };
             string tournamentlink;
             string json = string.Empty;
@@ -172,7 +177,7 @@ namespace challonge_to_liquipedia
                     else    // Make a new entry for the round if it doesn't exist
                     {
                         // Add the current set to the newly created list
-                        List<challonge_to_liquipedia.JSON_Structure.Match> newSetList = new List<challonge_to_liquipedia.JSON_Structure.Match>();
+                        List<JSON_Structure.Match> newSetList = new List<JSON_Structure.Match>();
                         newSetList.Add(root.tournament.matches[i].match);
 
                         roundList.Add(root.tournament.matches[i].match.round, newSetList);
@@ -180,13 +185,195 @@ namespace challonge_to_liquipedia
                 }
             }
 
+            // Only perform the entrants check if rounds 1 and 2 exist for winners and losers
+            if (roundList.ContainsKey(1) && roundList.ContainsKey(2) && roundList.ContainsKey(-1) && roundList.ContainsKey(-2))
+            {
+                // Insert byes into round 1 and -1 if we don't have a power of 2
+                int r1count = roundList[1].Count;
+                if (!IsPowerOfTwo(roundList[1].Count))
+                {
+                    // Reconstruct the entirety of round 1 based on round 2 prerequisite matches
+                    roundList[1].Clear();
+                    foreach (JSON_Structure.Match r2match in roundList[2])
+                    {
+                        // Add a bye match if the prereq is null
+                        if (r2match.player1_prereq_match_id == 0)
+                        {
+                            JSON_Structure.Match newMatch = new JSON_Structure.Match();
+
+                            newMatch.player1_id = r2match.player1_id;
+                            newMatch.player2_id = PLAYER_BYE;
+                            newMatch.winner_id = r2match.player1_id;
+                            newMatch.loser_id = PLAYER_BYE;
+                            newMatch.round = 1;
+                            newMatch.scores_csv = "1-0";
+                            roundList[1].Add(newMatch);
+                        }
+                        // Otherwise add a match based on the prereq id
+                        else
+                        {
+                            for (int i = 0; i < root.tournament.matches.Count(); i++) 
+                            {
+                                if (root.tournament.matches[i].match.id == r2match.player1_prereq_match_id)
+                                {
+                                    roundList[1].Add(root.tournament.matches[i].match);
+                                    break;
+                                }
+                            }                            
+                        }
+
+                        // Add a bye match if the prereq is null
+                        if (r2match.player2_prereq_match_id == 0)
+                        {
+                            JSON_Structure.Match newMatch = new JSON_Structure.Match();
+
+                            newMatch.player1_id = r2match.player2_id;
+                            newMatch.player2_id = PLAYER_BYE;
+                            newMatch.winner_id = r2match.player2_id;
+                            newMatch.loser_id = PLAYER_BYE;
+                            newMatch.round = 1;
+                            newMatch.scores_csv = "1-0";
+                            roundList[1].Add(newMatch);
+                        }
+                        // Otherwise add a match based on the prereq id
+                        else
+                        {
+                            for (int i = 0; i < root.tournament.matches.Count(); i++)
+                            {
+                                if (root.tournament.matches[i].match.id == r2match.player2_prereq_match_id)
+                                {
+                                    roundList[1].Add(root.tournament.matches[i].match);
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
+                    // Refresh the r1 count. l1 should be half of this number.
+                    int l1count = roundList[1].Count / 2;
+
+                    // If l2 has less entries than l1, that means all of l2 has l1 prerequisites
+                    if (roundList[-2].Count < l1count)
+                    {
+                        // Reconstruct the entirety of round -1 based on round -2 prerequisite matches
+                        roundList[-1].Clear();
+                        foreach (JSON_Structure.Match l2match in roundList[-2])
+                        {
+                            // Add a bye match if the prereq is null
+                            if (l2match.player1_prereq_match_id == 0)
+                            {
+                                JSON_Structure.Match newMatch = new JSON_Structure.Match();
+
+                                newMatch.player1_id = l2match.player1_id;
+                                newMatch.player2_id = PLAYER_BYE;
+                                newMatch.winner_id = l2match.player1_id;
+                                newMatch.loser_id = PLAYER_BYE;
+                                newMatch.round = 1;
+                                newMatch.scores_csv = "1-0";
+                                roundList[-1].Add(newMatch);
+                            }
+                            // Otherwise add a match based on the prereq id
+                            else
+                            {
+                                for (int i = 0; i < root.tournament.matches.Count(); i++)
+                                {
+                                    if (root.tournament.matches[i].match.id == l2match.player1_prereq_match_id)
+                                    {
+                                        roundList[-1].Add(root.tournament.matches[i].match);
+                                        break;
+                                    }
+                                }
+                            }
+
+                            // Add a bye match if the prereq is null
+                            if (l2match.player2_prereq_match_id == 0)
+                            {
+                                JSON_Structure.Match newMatch = new JSON_Structure.Match();
+
+                                newMatch.player1_id = l2match.player2_id;
+                                newMatch.player2_id = PLAYER_BYE;
+                                newMatch.winner_id = l2match.player2_id;
+                                newMatch.loser_id = PLAYER_BYE;
+                                newMatch.round = 1;
+                                newMatch.scores_csv = "1-0";
+                                roundList[-1].Add(newMatch);
+                            }
+                            // Otherwise add a match based on the prereq id
+                            else
+                            {
+                                for (int i = 0; i < root.tournament.matches.Count(); i++)
+                                {
+                                    if (root.tournament.matches[i].match.id == l2match.player2_prereq_match_id)
+                                    {
+                                        roundList[-1].Add(root.tournament.matches[i].match);
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    // Otherwise, assume player 1 is a dropdown from winners, and does not need a prereq match
+                    else
+                    {
+                        // Reconstruct the entirety of round -1 based on round -2 prerequisite matches
+                        roundList[-1].Clear();
+                        foreach (JSON_Structure.Match l2match in roundList[-2])
+                        {
+                            // Add a bye match if the prereq is null
+                            if (l2match.player2_prereq_match_id == 0)
+                            {
+                                JSON_Structure.Match newMatch = new JSON_Structure.Match();
+
+                                newMatch.player1_id = l2match.player2_id;
+                                newMatch.player2_id = PLAYER_BYE;
+                                newMatch.winner_id = l2match.player2_id;
+                                newMatch.loser_id = PLAYER_BYE;
+                                newMatch.round = 1;
+                                newMatch.scores_csv = "1-0";
+                                roundList[-1].Add(newMatch);
+                            }
+                            // Otherwise add a match based on the prereq id
+                            else
+                            {
+                                for (int i = 0; i < root.tournament.matches.Count(); i++)
+                                {
+                                    if (root.tournament.matches[i].match.id == l2match.player2_prereq_match_id)
+                                    {
+                                        // If this match is from winners, input a bye instead
+                                        if (root.tournament.matches[i].match.round > 0)
+                                        {
+                                            JSON_Structure.Match newMatch = new JSON_Structure.Match();
+
+                                            newMatch.player1_id = l2match.player2_id;
+                                            newMatch.player2_id = PLAYER_BYE;
+                                            newMatch.winner_id = l2match.player2_id;
+                                            newMatch.loser_id = PLAYER_BYE;
+                                            newMatch.round = 1;
+                                            newMatch.scores_csv = "1-0";
+                                            roundList[-1].Add(newMatch);
+                                        }
+                                        else
+                                        {
+                                            roundList[-1].Add(root.tournament.matches[i].match);
+                                        }
+
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+
             // Sort rounds and sets
             roundList = roundList.OrderBy(x => Math.Abs(x.Key)).ToDictionary(x => x.Key, x => x.Value);
             for (int i = 0; i < roundList.Count; i++)
             {
-                List<challonge_to_liquipedia.JSON_Structure.Match> tempList = roundList[roundList.ElementAt(i).Key];
+                List<JSON_Structure.Match> tempList = roundList[roundList.ElementAt(i).Key];
 
-                tempList = tempList.OrderBy(x => x.id).ToList();
+                //tempList = tempList.OrderBy(x => x.id).ToList();
 
                 for (int j = 0; j < tempList.Count; j++)
                 {
@@ -275,7 +462,22 @@ namespace challonge_to_liquipedia
             // Populate the entrant list using the json data
             for (int i = 0; i < root.tournament.participants.Count(); i++)
             {
-                entrantList.Add(root.tournament.participants[i].participant.id, new Entrant(root.tournament.participants[i].participant.name));
+                string name = root.tournament.participants[i].participant.name;
+
+                if (name.Contains("|"))
+                {
+                    if (checkBoxTrimTags.Checked)
+                    {
+                        int start = name.IndexOf("|")+1;
+                        name = name.Substring(start).Trim();
+                    }
+                    else
+                    {
+                        name = name.Replace("|", "{{!}}");
+                    }
+                }
+
+                entrantList.Add(root.tournament.participants[i].participant.id, new Entrant(name));
             }
 
             // Todo:
@@ -310,9 +512,16 @@ namespace challonge_to_liquipedia
             }
         }
 
+
         private void buttonFill_Click(object sender, EventArgs e)
         {
             string output = string.Empty;
+
+            // Don't proceed if data wasn't acquired
+            if (entrantList.Count() == 0 || roundList.Count() == 0)
+            {
+                richTextBoxOutput.Text = "Acquire data first";
+            }
 
             if (richTextBoxWinnersInput.Text != string.Empty)
             {
@@ -361,104 +570,138 @@ namespace challonge_to_liquipedia
                 // Iterate through all sets in the round
                 for (int j = 0; j < roundList[i].Count; j++)
                 {
-                    challonge_to_liquipedia.JSON_Structure.Match currentSet = roundList[i][j];
-
-                    // Check to see if the players exist
-                    if (currentSet.player1_id == 0) continue;
-                    if (currentSet.player2_id == 0) continue;
+                    JSON_Structure.Match currentSet = roundList[i][j];
 
                     outputRound = Math.Abs(i) + offset;
-                    
-                    // Fill in the set normally
-                    FillLPParameter(ref bracketText, bracketSide + outputRound + LpStrings.Match + currentSet.matchnumber + LpStrings.P1, entrantList[currentSet.player1_id].gamertag);
-                    FillLPParameter(ref bracketText, bracketSide + outputRound + LpStrings.Match + currentSet.matchnumber + LpStrings.P1 + LpStrings.Flag, entrantList[currentSet.player1_id].flag);
-                    FillLPParameter(ref bracketText, bracketSide + outputRound + LpStrings.Match + currentSet.matchnumber + LpStrings.P2, entrantList[currentSet.player2_id].gamertag);
-                    FillLPParameter(ref bracketText, bracketSide + outputRound + LpStrings.Match + currentSet.matchnumber + LpStrings.P2 + LpStrings.Flag, entrantList[currentSet.player2_id].flag);
 
-                    // Check for DQs
-                    if (currentSet.entrant1wins == -1)
+                    // Check for player byes
+                    if (currentSet.player1_id == PLAYER_BYE && currentSet.player2_id == PLAYER_BYE)
                     {
-                        FillLPParameter(ref bracketText, bracketSide + outputRound + LpStrings.Match + currentSet.matchnumber + LpStrings.P1 + LpStrings.Score, "DQ");
-                        FillLPParameter(ref bracketText, bracketSide + outputRound + LpStrings.Match + currentSet.matchnumber + LpStrings.P2 + LpStrings.Score, LpStrings.Checkmark);
+                        // If both players are byes, skip this entry
+                        continue;
                     }
-                    else if (currentSet.entrant2wins == -1)
+                    else if (currentSet.player1_id == PLAYER_BYE)
                     {
-                        FillLPParameter(ref bracketText, bracketSide + outputRound + LpStrings.Match + currentSet.matchnumber + LpStrings.P2 + LpStrings.Score, "DQ");
-                        FillLPParameter(ref bracketText, bracketSide + outputRound + LpStrings.Match + currentSet.matchnumber + LpStrings.P1 + LpStrings.Score, LpStrings.Checkmark);
+                        // Fill in player 1 as a bye if fill byes is checked
+                        if (checkBoxFillByes.Checked == true) FillLPParameter(ref bracketText, bracketSide + outputRound + LpStrings.Match + currentSet.matchnumber + LpStrings.P1, "Bye");
+
+                        // Give player 2 a checkmark
+                        FillLPParameter(ref bracketText, bracketSide + outputRound + LpStrings.Match + currentSet.matchnumber + LpStrings.P2, entrantList[currentSet.player2_id].gamertag);
+                        FillLPParameter(ref bracketText, bracketSide + outputRound + LpStrings.Match + currentSet.matchnumber + LpStrings.P2 + LpStrings.Flag, entrantList[currentSet.player2_id].flag);
+                        if (checkBoxFillByeWins.Checked == true)
+                        {
+                            FillLPParameter(ref bracketText, bracketSide + outputRound + LpStrings.Match + currentSet.matchnumber + LpStrings.P2 + LpStrings.Score, LpStrings.Checkmark);
+                            FillLPParameter(ref bracketText, bracketSide + outputRound + LpStrings.Match + currentSet.matchnumber + LpStrings.Win, "2");
+                        }
+                    }
+                    else if (currentSet.player2_id == PLAYER_BYE)
+                    {
+                        // Fill in player 2 as a bye
+                        if (checkBoxFillByes.Checked == true) FillLPParameter(ref bracketText, bracketSide + outputRound + LpStrings.Match + currentSet.matchnumber + LpStrings.P2, "Bye");
+
+                        // Give player 1 a checkmark
+                        FillLPParameter(ref bracketText, bracketSide + outputRound + LpStrings.Match + currentSet.matchnumber + LpStrings.P1, entrantList[currentSet.player1_id].gamertag);
+                        FillLPParameter(ref bracketText, bracketSide + outputRound + LpStrings.Match + currentSet.matchnumber + LpStrings.P1 + LpStrings.Flag, entrantList[currentSet.player1_id].flag);
+
+                        if (checkBoxFillByeWins.Checked == true)
+                        {
+                            FillLPParameter(ref bracketText, bracketSide + outputRound + LpStrings.Match + currentSet.matchnumber + LpStrings.P1 + LpStrings.Score, LpStrings.Checkmark);
+                            FillLPParameter(ref bracketText, bracketSide + outputRound + LpStrings.Match + currentSet.matchnumber + LpStrings.Win, "1");
+                        }
                     }
                     else
                     {
-                        if (currentSet.round == lastround && currentSet.player1_prereq_match_id == currentSet.player2_prereq_match_id)
+                        // Fill in the set normally
+                        FillLPParameter(ref bracketText, bracketSide + outputRound + LpStrings.Match + currentSet.matchnumber + LpStrings.P1, entrantList[currentSet.player1_id].gamertag);
+                        FillLPParameter(ref bracketText, bracketSide + outputRound + LpStrings.Match + currentSet.matchnumber + LpStrings.P1 + LpStrings.Flag, entrantList[currentSet.player1_id].flag);
+                        FillLPParameter(ref bracketText, bracketSide + outputRound + LpStrings.Match + currentSet.matchnumber + LpStrings.P2, entrantList[currentSet.player2_id].gamertag);
+                        FillLPParameter(ref bracketText, bracketSide + outputRound + LpStrings.Match + currentSet.matchnumber + LpStrings.P2 + LpStrings.Flag, entrantList[currentSet.player2_id].flag);
+
+
+                        // Check for DQs
+                        if (currentSet.entrant1wins == -1)
                         {
-                            if (currentSet.entrant1wins != -99 && currentSet.entrant2wins != -99)
+                            FillLPParameter(ref bracketText, bracketSide + outputRound + LpStrings.Match + currentSet.matchnumber + LpStrings.P1 + LpStrings.Score, "DQ");
+                            FillLPParameter(ref bracketText, bracketSide + outputRound + LpStrings.Match + currentSet.matchnumber + LpStrings.P2 + LpStrings.Score, LpStrings.Checkmark);
+                        }
+                        else if (currentSet.entrant2wins == -1)
+                        {
+                            FillLPParameter(ref bracketText, bracketSide + outputRound + LpStrings.Match + currentSet.matchnumber + LpStrings.P2 + LpStrings.Score, "DQ");
+                            FillLPParameter(ref bracketText, bracketSide + outputRound + LpStrings.Match + currentSet.matchnumber + LpStrings.P1 + LpStrings.Score, LpStrings.Checkmark);
+                        }
+                        else
+                        {
+                            if (currentSet.round == lastround && currentSet.player1_prereq_match_id == currentSet.player2_prereq_match_id)
                             {
-                                FillLPParameter(ref bracketText, bracketSide + outputRound + LpStrings.Match + currentSet.matchnumber + LpStrings.P2 + LpStrings.Score, currentSet.entrant1wins.ToString());
-                                FillLPParameter(ref bracketText, bracketSide + outputRound + LpStrings.Match + currentSet.matchnumber + LpStrings.P1 + LpStrings.Score, currentSet.entrant2wins.ToString());
+                                if (currentSet.entrant1wins != -99 && currentSet.entrant2wins != -99)
+                                {
+                                    FillLPParameter(ref bracketText, bracketSide + outputRound + LpStrings.Match + currentSet.matchnumber + LpStrings.P2 + LpStrings.Score, currentSet.entrant1wins.ToString());
+                                    FillLPParameter(ref bracketText, bracketSide + outputRound + LpStrings.Match + currentSet.matchnumber + LpStrings.P1 + LpStrings.Score, currentSet.entrant2wins.ToString());
+                                }
+                                else
+                                {
+                                    if (currentSet.winner_id == currentSet.player1_id)
+                                    {
+                                        FillLPParameter(ref bracketText, bracketSide + outputRound + LpStrings.Match + currentSet.matchnumber + LpStrings.P2 + LpStrings.Score, "{{win}}");
+                                    }
+                                    else if (currentSet.winner_id == currentSet.player2_id)
+                                    {
+                                        FillLPParameter(ref bracketText, bracketSide + outputRound + LpStrings.Match + currentSet.matchnumber + LpStrings.P1 + LpStrings.Score, "{{win}}");
+                                    }
+                                }
                             }
                             else
                             {
-                                if (currentSet.winner_id == currentSet.player1_id)
+                                if (currentSet.entrant1wins != -99 && currentSet.entrant2wins != -99)
                                 {
-                                    FillLPParameter(ref bracketText, bracketSide + outputRound + LpStrings.Match + currentSet.matchnumber + LpStrings.P2 + LpStrings.Score, "{{win}}");
+                                    FillLPParameter(ref bracketText, bracketSide + outputRound + LpStrings.Match + currentSet.matchnumber + LpStrings.P1 + LpStrings.Score, currentSet.entrant1wins.ToString());
+                                    FillLPParameter(ref bracketText, bracketSide + outputRound + LpStrings.Match + currentSet.matchnumber + LpStrings.P2 + LpStrings.Score, currentSet.entrant2wins.ToString());
                                 }
-                                else if (currentSet.winner_id == currentSet.player2_id)
+                                else
                                 {
-                                    FillLPParameter(ref bracketText, bracketSide + outputRound + LpStrings.Match + currentSet.matchnumber + LpStrings.P1 + LpStrings.Score, "{{win}}");
+                                    if (currentSet.winner_id == currentSet.player1_id)
+                                    {
+                                        FillLPParameter(ref bracketText, bracketSide + outputRound + LpStrings.Match + currentSet.matchnumber + LpStrings.P1 + LpStrings.Score, "{{win}}");
+                                    }
+                                    else if (currentSet.winner_id == currentSet.player2_id)
+                                    {
+                                        FillLPParameter(ref bracketText, bracketSide + outputRound + LpStrings.Match + currentSet.matchnumber + LpStrings.P2 + LpStrings.Score, "{{win}}");
+                                    }
                                 }
+                            }
+                        }
+
+                        // Set the winner
+                        if (currentSet.round == lastround && currentSet.player1_prereq_match_id == currentSet.player2_prereq_match_id)
+                        {
+                            if (currentSet.winner_id == currentSet.player1_id)
+                            {
+                                FillLPParameter(ref bracketText, bracketSide + outputRound + LpStrings.Match + 1 + LpStrings.Win, "2");
+                            }
+                            else if (currentSet.winner_id == currentSet.player2_id)
+                            {
+                                FillLPParameter(ref bracketText, bracketSide + outputRound + LpStrings.Match + 1 + LpStrings.Win, "1");
+                            }
+                        }
+                        else if (currentSet.round == lastround && currentSet.matchnumber == 1 && roundList[i].Count > 1)
+                        {
+                            if (currentSet.winner_id == currentSet.player1_id)
+                            {
+                                FillLPParameter(ref bracketText, bracketSide + outputRound + LpStrings.Match + 1 + LpStrings.Win, "1");
                             }
                         }
                         else
                         {
-                            if (currentSet.entrant1wins != -99 && currentSet.entrant2wins != -99)
+                            if (currentSet.winner_id == currentSet.player1_id)
                             {
-                                FillLPParameter(ref bracketText, bracketSide + outputRound + LpStrings.Match + currentSet.matchnumber + LpStrings.P1 + LpStrings.Score, currentSet.entrant1wins.ToString());
-                                FillLPParameter(ref bracketText, bracketSide + outputRound + LpStrings.Match + currentSet.matchnumber + LpStrings.P2 + LpStrings.Score, currentSet.entrant2wins.ToString());
+                                FillLPParameter(ref bracketText, bracketSide + outputRound + LpStrings.Match + currentSet.matchnumber + LpStrings.Win, "1");
                             }
-                            else
+                            else if (currentSet.winner_id == currentSet.player2_id)
                             {
-                                if (currentSet.winner_id == currentSet.player1_id)
-                                {
-                                    FillLPParameter(ref bracketText, bracketSide + outputRound + LpStrings.Match + currentSet.matchnumber + LpStrings.P1 + LpStrings.Score, "{{win}}");
-                                }
-                                else if (currentSet.winner_id == currentSet.player2_id)
-                                {
-                                    FillLPParameter(ref bracketText, bracketSide + outputRound + LpStrings.Match + currentSet.matchnumber + LpStrings.P2 + LpStrings.Score, "{{win}}");
-                                }
+                                FillLPParameter(ref bracketText, bracketSide + outputRound + LpStrings.Match + currentSet.matchnumber + LpStrings.Win, "2");
                             }
                         }
                     }
-
-                    // Set the winner
-                    if (currentSet.round == lastround && currentSet.player1_prereq_match_id == currentSet.player2_prereq_match_id)
-                    {
-                        if (currentSet.winner_id == currentSet.player1_id)
-                        {
-                            FillLPParameter(ref bracketText, bracketSide + outputRound + LpStrings.Match + 1 + LpStrings.Win, "2");
-                        }
-                        else if (currentSet.winner_id == currentSet.player2_id)
-                        {
-                            FillLPParameter(ref bracketText, bracketSide + outputRound + LpStrings.Match + 1 + LpStrings.Win, "1");
-                        }
-                    }
-                    else if (currentSet.round == lastround && currentSet.matchnumber == 1 && roundList[i].Count > 1)
-                    {
-                        if (currentSet.winner_id == currentSet.player1_id)
-                        {
-                            FillLPParameter(ref bracketText, bracketSide + outputRound + LpStrings.Match + 1 + LpStrings.Win, "1");
-                        }
-                    }
-                    else
-                    {
-                        if (currentSet.winner_id == currentSet.player1_id)
-                        {
-                            FillLPParameter(ref bracketText, bracketSide + outputRound + LpStrings.Match + currentSet.matchnumber + LpStrings.Win, "1");
-                        }
-                        else if (currentSet.winner_id == currentSet.player2_id)
-                        {
-                            FillLPParameter(ref bracketText, bracketSide + outputRound + LpStrings.Match + currentSet.matchnumber + LpStrings.Win, "2");
-                        }
-                    }
-
                 }
             }
         }
@@ -480,16 +723,11 @@ namespace challonge_to_liquipedia
             {
                 lpText = lpText.Replace(match.Groups[1].Value + match.Groups[2].Value, match.Groups[1].Value + value + match.Groups[2].Value);
             }
-            //Regex.Replace(lpText, @"(\|" + param + @"=)([ \r\n])","$1"+value+"$2",)
-            //lpText = rgx.Replace(lpText, @"$1" + Regex.Escape(value) + "$2");
+        }
 
-            //int start = lpText.IndexOf("|" + param + "=");
-
-            //if (start != -1)
-            //{
-            //    start += param.Length + 2;
-            //    lpText = lpText.Insert(start, value);
-            //}
+        bool IsPowerOfTwo(int x)
+        {
+            return (x & (x - 1)) == 0;
         }
     }
 }

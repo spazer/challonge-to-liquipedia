@@ -45,6 +45,9 @@
             this.numericUpDownLosersOffset = new System.Windows.Forms.NumericUpDown();
             this.numericUpDownLosersEnd = new System.Windows.Forms.NumericUpDown();
             this.numericUpDownLosersStart = new System.Windows.Forms.NumericUpDown();
+            this.checkBoxFillByes = new System.Windows.Forms.CheckBox();
+            this.checkBoxFillByeWins = new System.Windows.Forms.CheckBox();
+            this.checkBoxTrimTags = new System.Windows.Forms.CheckBox();
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDownWinnersStart)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDownWinnersEnd)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDownWinnersOffset)).BeginInit();
@@ -198,11 +201,48 @@
             this.numericUpDownLosersStart.Size = new System.Drawing.Size(38, 20);
             this.numericUpDownLosersStart.TabIndex = 9;
             // 
+            // checkBoxFillByes
+            // 
+            this.checkBoxFillByes.AutoSize = true;
+            this.checkBoxFillByes.Checked = true;
+            this.checkBoxFillByes.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.checkBoxFillByes.Location = new System.Drawing.Point(430, 104);
+            this.checkBoxFillByes.Name = "checkBoxFillByes";
+            this.checkBoxFillByes.Size = new System.Drawing.Size(64, 17);
+            this.checkBoxFillByes.TabIndex = 12;
+            this.checkBoxFillByes.Text = "Fill Byes";
+            this.checkBoxFillByes.UseVisualStyleBackColor = true;
+            // 
+            // checkBoxFillByeWins
+            // 
+            this.checkBoxFillByeWins.AutoSize = true;
+            this.checkBoxFillByeWins.Checked = true;
+            this.checkBoxFillByeWins.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.checkBoxFillByeWins.Location = new System.Drawing.Point(500, 104);
+            this.checkBoxFillByeWins.Name = "checkBoxFillByeWins";
+            this.checkBoxFillByeWins.Size = new System.Drawing.Size(86, 17);
+            this.checkBoxFillByeWins.TabIndex = 12;
+            this.checkBoxFillByeWins.Text = "Fill Bye Wins";
+            this.checkBoxFillByeWins.UseVisualStyleBackColor = true;
+            // 
+            // checkBoxTrimTags
+            // 
+            this.checkBoxTrimTags.AutoSize = true;
+            this.checkBoxTrimTags.Location = new System.Drawing.Point(592, 104);
+            this.checkBoxTrimTags.Name = "checkBoxTrimTags";
+            this.checkBoxTrimTags.Size = new System.Drawing.Size(70, 17);
+            this.checkBoxTrimTags.TabIndex = 13;
+            this.checkBoxTrimTags.Text = "TrimTags";
+            this.checkBoxTrimTags.UseVisualStyleBackColor = true;
+            // 
             // FormMain
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(713, 469);
+            this.Controls.Add(this.checkBoxTrimTags);
+            this.Controls.Add(this.checkBoxFillByeWins);
+            this.Controls.Add(this.checkBoxFillByes);
             this.Controls.Add(this.numericUpDownLosersOffset);
             this.Controls.Add(this.numericUpDownLosersEnd);
             this.Controls.Add(this.numericUpDownLosersStart);
@@ -253,6 +293,9 @@
         private System.Windows.Forms.NumericUpDown numericUpDownLosersOffset;
         private System.Windows.Forms.NumericUpDown numericUpDownLosersEnd;
         private System.Windows.Forms.NumericUpDown numericUpDownLosersStart;
+        private System.Windows.Forms.CheckBox checkBoxFillByes;
+        private System.Windows.Forms.CheckBox checkBoxFillByeWins;
+        private System.Windows.Forms.CheckBox checkBoxTrimTags;
     }
 }
 
