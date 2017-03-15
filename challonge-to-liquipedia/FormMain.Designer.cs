@@ -48,6 +48,8 @@
             this.checkBoxFillByes = new System.Windows.Forms.CheckBox();
             this.checkBoxFillByeWins = new System.Windows.Forms.CheckBox();
             this.checkBoxTrimTags = new System.Windows.Forms.CheckBox();
+            this.buttonAKA = new System.Windows.Forms.Button();
+            this.labelAkaDatabaseRev = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDownWinnersStart)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDownWinnersEnd)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDownWinnersOffset)).BeginInit();
@@ -228,18 +230,38 @@
             // checkBoxTrimTags
             // 
             this.checkBoxTrimTags.AutoSize = true;
-            this.checkBoxTrimTags.Location = new System.Drawing.Point(592, 104);
+            this.checkBoxTrimTags.Location = new System.Drawing.Point(93, 104);
             this.checkBoxTrimTags.Name = "checkBoxTrimTags";
-            this.checkBoxTrimTags.Size = new System.Drawing.Size(70, 17);
+            this.checkBoxTrimTags.Size = new System.Drawing.Size(73, 17);
             this.checkBoxTrimTags.TabIndex = 13;
-            this.checkBoxTrimTags.Text = "TrimTags";
+            this.checkBoxTrimTags.Text = "Trim Tags";
             this.checkBoxTrimTags.UseVisualStyleBackColor = true;
+            // 
+            // buttonAKA
+            // 
+            this.buttonAKA.Location = new System.Drawing.Point(626, 12);
+            this.buttonAKA.Name = "buttonAKA";
+            this.buttonAKA.Size = new System.Drawing.Size(75, 23);
+            this.buttonAKA.TabIndex = 5;
+            this.buttonAKA.Text = "Get AKA DB";
+            this.buttonAKA.UseVisualStyleBackColor = true;
+            this.buttonAKA.Click += new System.EventHandler(this.buttonAKA_Click);
+            // 
+            // labelAkaDatabaseRev
+            // 
+            this.labelAkaDatabaseRev.AutoSize = true;
+            this.labelAkaDatabaseRev.Location = new System.Drawing.Point(623, 38);
+            this.labelAkaDatabaseRev.Name = "labelAkaDatabaseRev";
+            this.labelAkaDatabaseRev.Size = new System.Drawing.Size(57, 13);
+            this.labelAkaDatabaseRev.TabIndex = 14;
+            this.labelAkaDatabaseRev.Text = "Rev: none";
             // 
             // FormMain
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(713, 469);
+            this.Controls.Add(this.labelAkaDatabaseRev);
             this.Controls.Add(this.checkBoxTrimTags);
             this.Controls.Add(this.checkBoxFillByeWins);
             this.Controls.Add(this.checkBoxFillByes);
@@ -249,6 +271,7 @@
             this.Controls.Add(this.numericUpDownWinnersOffset);
             this.Controls.Add(this.numericUpDownWinnersEnd);
             this.Controls.Add(this.numericUpDownWinnersStart);
+            this.Controls.Add(this.buttonAKA);
             this.Controls.Add(this.buttonFill);
             this.Controls.Add(this.richTextBoxWinnersInput);
             this.Controls.Add(this.richTextBoxLosersInput);
@@ -261,7 +284,7 @@
             this.Controls.Add(this.textBoxUsername);
             this.Controls.Add(this.textBoxPassword);
             this.Name = "FormMain";
-            this.Text = "Challonge to Liquipedia";
+            this.Text = "Challonge to Liquipedia v1.0";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.Form1_FormClosing);
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDownWinnersStart)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDownWinnersEnd)).EndInit();
@@ -296,6 +319,8 @@
         private System.Windows.Forms.CheckBox checkBoxFillByes;
         private System.Windows.Forms.CheckBox checkBoxFillByeWins;
         private System.Windows.Forms.CheckBox checkBoxTrimTags;
+        private System.Windows.Forms.Button buttonAKA;
+        private System.Windows.Forms.Label labelAkaDatabaseRev;
     }
 }
 

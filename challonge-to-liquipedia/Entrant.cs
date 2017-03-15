@@ -6,11 +6,12 @@ using System.Threading.Tasks;
 
 namespace challonge_to_liquipedia
 {
-    class Entrant
+    public class Entrant
     {
-        public string gamertag;
-        public string flag;
+        private string gamertag;
+        private string flag;
 
+        #region Constructors
         public Entrant(string gamertag)
         {
             this.gamertag = gamertag;
@@ -22,5 +23,20 @@ namespace challonge_to_liquipedia
             this.gamertag = gamertag;
             this.flag = flag;
         }
+        #endregion
+
+        #region Properties
+        public string Gamertag
+        {
+            get { return gamertag; }
+            set { gamertag = value; }
+        }
+
+        public string Flag
+        {
+            get { return flag; }
+            set { flag = value; }
+        }
+        #endregion
     }
 }

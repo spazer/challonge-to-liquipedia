@@ -11,17 +11,23 @@ using System.Net;
 using System.IO;
 using challonge_to_liquipedia.JSON_Structure;
 using System.Text.RegularExpressions;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace challonge_to_liquipedia
 {
     public partial class FormMain : Form
     {
+        static string AKA_URI = "http://wiki.teamliquid.net/smash/api.php?action=parse&page=Liquipedia:Players_Regex&prop=revid|wikitext&format=json";
+
         static string BASE_URI = "https://api.challonge.com/v1/tournaments/";
         static string EXTENSION_URI = ".json";
         static int PLAYER_BYE = 0;
 
         Dictionary<int, List<JSON_Structure.Match>> roundList = new Dictionary<int, List<JSON_Structure.Match>>();
         Dictionary<int, Entrant> entrantList = new Dictionary<int, Entrant>();
+
+        PlayerDatabase playerdb;
 
         #region Form
         public FormMain()
@@ -41,8 +47,16 @@ namespace challonge_to_liquipedia
             {
                 Console.WriteLine("No saved credentials.");
             }
+
+            playerdb = new PlayerDatabase();
+            UpdateRevID();
         }
 
+        /// <summary>
+        /// Save challonge credentials on close
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void Form1_FormClosing(object sender, FormClosingEventArgs e)
         {
             if (textBoxUsername.Text != string.Empty && textBoxPassword.Text != string.Empty)
@@ -64,6 +78,12 @@ namespace challonge_to_liquipedia
         }
         #endregion
 
+        #region Buttons
+        /// <summary>
+        /// Retrieve data from challonge and parse it
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void buttonRetrieve_Click(object sender, EventArgs e)
         {
             // Clear existing data
@@ -131,9 +151,45 @@ namespace challonge_to_liquipedia
                 MessageBox.Show("Warning: this is not a double elimination bracket. It is a:\r\n\r\n" + root.tournament.tournament_type);
             }
 
+            // Parse the json
             GetSets(ref root);
             GetEntrants(ref root);
         }
+
+        /// <summary>
+        /// Fill the output window with wikicode and parameters
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void buttonFill_Click(object sender, EventArgs e)
+        {
+            string output = string.Empty;
+
+            // Don't proceed if data wasn't acquired
+            if (entrantList.Count() == 0 || roundList.Count() == 0)
+            {
+                richTextBoxOutput.Text = "Acquire data first";
+            }
+
+            if (richTextBoxWinnersInput.Text != string.Empty)
+            {
+                output += "===Winners Bracket===\r\n";
+                output += richTextBoxWinnersInput.Text;
+                fillBracketSingles((int)numericUpDownWinnersStart.Value, (int)numericUpDownWinnersEnd.Value, (int)numericUpDownWinnersOffset.Value, ref output);
+                output += "\r\n";
+            }
+
+            if (richTextBoxLosersInput.Text != string.Empty)
+            {
+                output += "===Losers Bracket===\r\n";
+                output += richTextBoxLosersInput.Text;
+                fillBracketSingles(-(int)numericUpDownLosersStart.Value, -(int)numericUpDownLosersEnd.Value, (int)numericUpDownLosersOffset.Value, ref output);
+                output += "\r\n";
+            }
+
+            richTextBoxOutput.Text = output;
+        }
+        #endregion
 
         private void GetSets(ref RootObject root)
         {
@@ -464,11 +520,12 @@ namespace challonge_to_liquipedia
             {
                 string name = root.tournament.participants[i].participant.name;
 
+                // Remove tags where possible
                 if (name.Contains("|"))
                 {
                     if (checkBoxTrimTags.Checked)
                     {
-                        int start = name.IndexOf("|")+1;
+                        int start = name.IndexOf("|") + 1;
                         name = name.Substring(start).Trim();
                     }
                     else
@@ -483,6 +540,12 @@ namespace challonge_to_liquipedia
             // Todo:
             // Normalize names using regex
             // Insert flags where available
+
+            // Bring up the player replacement window
+            FormPlayerReplace formReplace = new FormPlayerReplace(ref entrantList, playerdb);
+            this.Hide();
+            formReplace.ShowDialog();
+            this.Show();
         }
 
         /// <summary>
@@ -513,35 +576,16 @@ namespace challonge_to_liquipedia
         }
 
 
-        private void buttonFill_Click(object sender, EventArgs e)
-        {
-            string output = string.Empty;
+        
 
-            // Don't proceed if data wasn't acquired
-            if (entrantList.Count() == 0 || roundList.Count() == 0)
-            {
-                richTextBoxOutput.Text = "Acquire data first";
-            }
-
-            if (richTextBoxWinnersInput.Text != string.Empty)
-            {
-                output += "===Winners Bracket===\r\n";
-                output += richTextBoxWinnersInput.Text;
-                fillBracketSingles((int)numericUpDownWinnersStart.Value, (int)numericUpDownWinnersEnd.Value, (int)numericUpDownWinnersOffset.Value, ref output);
-                output += "\r\n";
-            }
-
-            if (richTextBoxLosersInput.Text != string.Empty)
-            {
-                output += "===Losers Bracket===\r\n";
-                output += richTextBoxLosersInput.Text;
-                fillBracketSingles(-(int)numericUpDownLosersStart.Value, -(int)numericUpDownLosersEnd.Value, (int)numericUpDownLosersOffset.Value, ref output);
-                output += "\r\n";
-            }
-
-            richTextBoxOutput.Text = output;
-        }
-
+        #region Fill Methods
+        /// <summary>
+        /// Fills bracket wikicode
+        /// </summary>
+        /// <param name="startRound">Round to start filling with</param>
+        /// <param name="endRound">Round to stop filling with</param>
+        /// <param name="offset">Number of rounds to offset by</param>
+        /// <param name="bracketText">A string containing the bracket wikicode</param>
         private void fillBracketSingles(int startRound, int endRound, int offset, ref string bracketText)
         {
             int increment;
@@ -586,8 +630,8 @@ namespace challonge_to_liquipedia
                         if (checkBoxFillByes.Checked == true) FillLPParameter(ref bracketText, bracketSide + outputRound + LpStrings.Match + currentSet.matchnumber + LpStrings.P1, "Bye");
 
                         // Give player 2 a checkmark
-                        FillLPParameter(ref bracketText, bracketSide + outputRound + LpStrings.Match + currentSet.matchnumber + LpStrings.P2, entrantList[currentSet.player2_id].gamertag);
-                        FillLPParameter(ref bracketText, bracketSide + outputRound + LpStrings.Match + currentSet.matchnumber + LpStrings.P2 + LpStrings.Flag, entrantList[currentSet.player2_id].flag);
+                        FillLPParameter(ref bracketText, bracketSide + outputRound + LpStrings.Match + currentSet.matchnumber + LpStrings.P2, entrantList[currentSet.player2_id].Gamertag);
+                        FillLPParameter(ref bracketText, bracketSide + outputRound + LpStrings.Match + currentSet.matchnumber + LpStrings.P2 + LpStrings.Flag, entrantList[currentSet.player2_id].Flag);
                         if (checkBoxFillByeWins.Checked == true)
                         {
                             FillLPParameter(ref bracketText, bracketSide + outputRound + LpStrings.Match + currentSet.matchnumber + LpStrings.P2 + LpStrings.Score, LpStrings.Checkmark);
@@ -600,8 +644,8 @@ namespace challonge_to_liquipedia
                         if (checkBoxFillByes.Checked == true) FillLPParameter(ref bracketText, bracketSide + outputRound + LpStrings.Match + currentSet.matchnumber + LpStrings.P2, "Bye");
 
                         // Give player 1 a checkmark
-                        FillLPParameter(ref bracketText, bracketSide + outputRound + LpStrings.Match + currentSet.matchnumber + LpStrings.P1, entrantList[currentSet.player1_id].gamertag);
-                        FillLPParameter(ref bracketText, bracketSide + outputRound + LpStrings.Match + currentSet.matchnumber + LpStrings.P1 + LpStrings.Flag, entrantList[currentSet.player1_id].flag);
+                        FillLPParameter(ref bracketText, bracketSide + outputRound + LpStrings.Match + currentSet.matchnumber + LpStrings.P1, entrantList[currentSet.player1_id].Gamertag);
+                        FillLPParameter(ref bracketText, bracketSide + outputRound + LpStrings.Match + currentSet.matchnumber + LpStrings.P1 + LpStrings.Flag, entrantList[currentSet.player1_id].Flag);
 
                         if (checkBoxFillByeWins.Checked == true)
                         {
@@ -612,10 +656,10 @@ namespace challonge_to_liquipedia
                     else
                     {
                         // Fill in the set normally
-                        FillLPParameter(ref bracketText, bracketSide + outputRound + LpStrings.Match + currentSet.matchnumber + LpStrings.P1, entrantList[currentSet.player1_id].gamertag);
-                        FillLPParameter(ref bracketText, bracketSide + outputRound + LpStrings.Match + currentSet.matchnumber + LpStrings.P1 + LpStrings.Flag, entrantList[currentSet.player1_id].flag);
-                        FillLPParameter(ref bracketText, bracketSide + outputRound + LpStrings.Match + currentSet.matchnumber + LpStrings.P2, entrantList[currentSet.player2_id].gamertag);
-                        FillLPParameter(ref bracketText, bracketSide + outputRound + LpStrings.Match + currentSet.matchnumber + LpStrings.P2 + LpStrings.Flag, entrantList[currentSet.player2_id].flag);
+                        FillLPParameter(ref bracketText, bracketSide + outputRound + LpStrings.Match + currentSet.matchnumber + LpStrings.P1, entrantList[currentSet.player1_id].Gamertag);
+                        FillLPParameter(ref bracketText, bracketSide + outputRound + LpStrings.Match + currentSet.matchnumber + LpStrings.P1 + LpStrings.Flag, entrantList[currentSet.player1_id].Flag);
+                        FillLPParameter(ref bracketText, bracketSide + outputRound + LpStrings.Match + currentSet.matchnumber + LpStrings.P2, entrantList[currentSet.player2_id].Gamertag);
+                        FillLPParameter(ref bracketText, bracketSide + outputRound + LpStrings.Match + currentSet.matchnumber + LpStrings.P2 + LpStrings.Flag, entrantList[currentSet.player2_id].Flag);
 
 
                         // Check for DQs
@@ -724,10 +768,50 @@ namespace challonge_to_liquipedia
                 lpText = lpText.Replace(match.Groups[1].Value + match.Groups[2].Value, match.Groups[1].Value + value + match.Groups[2].Value);
             }
         }
+        #endregion
 
         bool IsPowerOfTwo(int x)
         {
             return (x & (x - 1)) == 0;
+        }
+
+        private void buttonAKA_Click(object sender, EventArgs e)
+        {
+            WebClient client = new WebClient();
+            string json = client.DownloadString(AKA_URI);
+            richTextBoxOutput.Text = json;
+
+            // Save data to file
+            try
+            {
+                StreamWriter userinfo = new StreamWriter(@"AkaDatabase.json");
+                userinfo.Write(json);
+                userinfo.Close();
+            }
+            catch
+            {
+                Console.WriteLine("Couldn't save json.");
+            }
+
+            
+            playerdb.ReadDatabaseFromFile();
+            UpdateRevID();
+        }
+
+        private void UpdateRevID()
+        {
+            if (playerdb == null) return;
+
+            int revID = playerdb.RevID;
+
+            if (revID == 0)
+            {
+                labelAkaDatabaseRev.Text = "Rev: none";
+            }
+            else
+            {
+                labelAkaDatabaseRev.Text = "Rev: " + revID.ToString();
+            }
         }
     }
 }
