@@ -11,7 +11,6 @@ namespace challonge_to_liquipedia
 {
     public class PlayerDatabase
     {
-        private static string AKA_DB_FILENAME = @"AkaDatabase.json";
         private static string SMASH_DB_FILENAME = @"SmashAkaDatabase.json";
         private static string FIGHTERS_DB_FILENAME = @"FightersAkaDatabase.json";
         private static string REVID_PATH = @"parse.revid";
@@ -22,6 +21,7 @@ namespace challonge_to_liquipedia
         private static string TEMPLATE_PLAYER = @"|player=";
         private static string TEMPLATE_FLAG = @"|flag=";
         private static string TEMPLATE_ALTS = @"|alts=";
+        private static string TEMPLATE_SMASHGG = @"|smashgg=";
 
         public enum DbSource { Smash, Fighters };
 
@@ -92,19 +92,19 @@ namespace challonge_to_liquipedia
                 while (json.IndexOf(TEMPLATE_START, i) != -1 && json.IndexOf(TEMPLATE_END, i) != -1)
                 {
                     int entrystart = json.IndexOf(TEMPLATE_START, i);
-                    //string temp = json.Substring(entrystart, i);
                     int entryend = json.IndexOf(TEMPLATE_END, i) + TEMPLATE_END.Length;
-                    //temp = json.Substring(entryend, i);
 
                     string segment = json.Substring(entrystart, entryend - entrystart);
 
                     int playerPos = segment.IndexOf(TEMPLATE_PLAYER);
                     int flagPos = segment.IndexOf(TEMPLATE_FLAG);
                     int altPos = segment.IndexOf(TEMPLATE_ALTS);
+                    int smashggPos = segment.IndexOf(TEMPLATE_SMASHGG);
 
                     string player = string.Empty;
                     string flag = string.Empty;
                     string regex = string.Empty;
+                    int smashggID = 0;
 
                     // Get player
                     if (playerPos != -1 && flagPos != -1)
@@ -121,10 +121,19 @@ namespace challonge_to_liquipedia
                     // Get alts
                     if (altPos != -1)
                     {
-                        regex = segment.Substring(altPos + TEMPLATE_ALTS.Length, segment.Length - altPos - TEMPLATE_ALTS.Length - TEMPLATE_END.Length).Trim();
+                        regex = segment.Substring(altPos + TEMPLATE_ALTS.Length, smashggPos - altPos - TEMPLATE_ALTS.Length).Trim();
                     }
 
-                    PlayerInfo newPlayer = new PlayerInfo(player, flag, regex);
+                    // Get smashgg ID. If no ID exists, make it 0
+                    if (altPos != -1)
+                    {
+                        if (!int.TryParse(segment.Substring(altPos + TEMPLATE_SMASHGG.Length, segment.Length - altPos - TEMPLATE_SMASHGG.Length - TEMPLATE_END.Length).Trim(), out smashggID))
+                        {
+                            smashggID = 0;
+                        }
+                    }
+
+                    PlayerInfo newPlayer = new PlayerInfo(player, flag, regex, smashggID);
                     players.Add(newPlayer);
 
                     i = entryend;
