@@ -50,6 +50,8 @@
             this.checkBoxTrimTags = new System.Windows.Forms.CheckBox();
             this.buttonAKA = new System.Windows.Forms.Button();
             this.labelAkaDatabaseRev = new System.Windows.Forms.Label();
+            this.radioButtonSmash = new System.Windows.Forms.RadioButton();
+            this.radioButtonFighters = new System.Windows.Forms.RadioButton();
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDownWinnersStart)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDownWinnersEnd)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDownWinnersOffset)).BeginInit();
@@ -256,11 +258,38 @@
             this.labelAkaDatabaseRev.TabIndex = 14;
             this.labelAkaDatabaseRev.Text = "Rev: none";
             // 
+            // radioButtonSmash
+            // 
+            this.radioButtonSmash.AutoSize = true;
+            this.radioButtonSmash.Checked = true;
+            this.radioButtonSmash.Location = new System.Drawing.Point(563, 15);
+            this.radioButtonSmash.Name = "radioButtonSmash";
+            this.radioButtonSmash.Size = new System.Drawing.Size(57, 17);
+            this.radioButtonSmash.TabIndex = 15;
+            this.radioButtonSmash.TabStop = true;
+            this.radioButtonSmash.Text = "Smash";
+            this.radioButtonSmash.UseVisualStyleBackColor = true;
+            this.radioButtonSmash.CheckedChanged += new System.EventHandler(this.radioButtonDatabase_CheckedChanged);
+            // 
+            // radioButtonFighters
+            // 
+            this.radioButtonFighters.AutoSize = true;
+            this.radioButtonFighters.Location = new System.Drawing.Point(563, 36);
+            this.radioButtonFighters.Name = "radioButtonFighters";
+            this.radioButtonFighters.Size = new System.Drawing.Size(62, 17);
+            this.radioButtonFighters.TabIndex = 15;
+            this.radioButtonFighters.TabStop = true;
+            this.radioButtonFighters.Text = "Fighters";
+            this.radioButtonFighters.UseVisualStyleBackColor = true;
+            this.radioButtonFighters.CheckedChanged += new System.EventHandler(this.radioButtonDatabase_CheckedChanged);
+            // 
             // FormMain
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(713, 469);
+            this.Controls.Add(this.radioButtonFighters);
+            this.Controls.Add(this.radioButtonSmash);
             this.Controls.Add(this.labelAkaDatabaseRev);
             this.Controls.Add(this.checkBoxTrimTags);
             this.Controls.Add(this.checkBoxFillByeWins);
@@ -284,7 +313,7 @@
             this.Controls.Add(this.textBoxUsername);
             this.Controls.Add(this.textBoxPassword);
             this.Name = "FormMain";
-            this.Text = "Challonge to Liquipedia v1.0.0";
+            this.Text = "Challonge to Liquipedia v1.1.0";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.Form1_FormClosing);
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDownWinnersStart)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDownWinnersEnd)).EndInit();
@@ -321,6 +350,8 @@
         private System.Windows.Forms.CheckBox checkBoxTrimTags;
         private System.Windows.Forms.Button buttonAKA;
         private System.Windows.Forms.Label labelAkaDatabaseRev;
+        private System.Windows.Forms.RadioButton radioButtonSmash;
+        private System.Windows.Forms.RadioButton radioButtonFighters;
     }
 }
 

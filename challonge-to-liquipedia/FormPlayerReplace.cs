@@ -25,12 +25,14 @@ namespace challonge_to_liquipedia
             bs = new BindingSource();
             table = new List<TableEntry>();
             
+            // Match regex strings against each player and see what comes up
             foreach (Entrant player in entrantList.Values)
             {
                 bool matchFound = false;
                 foreach (PlayerInfo info in playerdb.players)
                 {
-                    if (Regex.IsMatch(player.Gamertag, info.regexMatch))
+                    // Add matches to the table
+                    if (Regex.IsMatch(player.Gamertag, info.regexMatch, RegexOptions.IgnoreCase))
                     {
                         table.Add(new TableEntry(player.Gamertag, info.name, info.regexMatch, info.flag));
                         matchFound = true;
@@ -38,6 +40,7 @@ namespace challonge_to_liquipedia
                     }
                 }
 
+                // Add empty strings to the table if no match is found
                 if (!matchFound)
                 {
                     table.Add(new TableEntry(player.Gamertag, string.Empty, string.Empty, string.Empty));

@@ -12,6 +12,8 @@ namespace challonge_to_liquipedia
     public class PlayerDatabase
     {
         private static string AKA_DB_FILENAME = @"AkaDatabase.json";
+        private static string SMASH_DB_FILENAME = @"SmashAkaDatabase.json";
+        private static string FIGHTERS_DB_FILENAME = @"FightersAkaDatabase.json";
         private static string REVID_PATH = @"parse.revid";
         private static string WIKITEXT_PATH = @"parse.wikitext.*";
 
@@ -21,14 +23,16 @@ namespace challonge_to_liquipedia
         private static string TEMPLATE_FLAG = @"|flag=";
         private static string TEMPLATE_ALTS = @"|alts=";
 
+        public enum DbSource { Smash, Fighters };
+
         public List<PlayerInfo> players;
 
         private int revID;
 
-        public PlayerDatabase()
+        public PlayerDatabase(DbSource source)
         {
             players = new List<PlayerInfo>();
-            ReadDatabaseFromFile();
+            ReadDatabaseFromFile(source);
         }
 
         public int RevID
@@ -36,16 +40,31 @@ namespace challonge_to_liquipedia
             get { return revID; }
         }
 
-        public bool ReadDatabaseFromFile()
+        public bool ReadDatabaseFromFile(DbSource source)
         {
             // Clear the list
             players.Clear();
+
+            // Set the filename
+            string filename = string.Empty;
+            if (source == DbSource.Fighters)
+            {
+                filename = FIGHTERS_DB_FILENAME;
+            }
+            else if (source == DbSource.Smash)
+            {
+                filename = SMASH_DB_FILENAME;
+            }
+            else
+            {
+                return false;
+            }
 
             // Read AKA database json if available
             string json = string.Empty;
             try
             {
-                using (StreamReader file = new StreamReader(AKA_DB_FILENAME))
+                using (StreamReader file = new StreamReader(filename))
                 {
                     using (JsonTextReader reader = new JsonTextReader(file))
                     {
@@ -119,6 +138,39 @@ namespace challonge_to_liquipedia
             catch
             {
                 Console.WriteLine("Error during parsing of AKA database: " + i);
+            }
+        }
+
+        public bool SaveDatabase(string json, DbSource source)
+        {
+            // Save data to file
+            try
+            {
+                // Set the filename
+                string filename;
+                if (source == DbSource.Fighters)
+                {
+                    filename = FIGHTERS_DB_FILENAME;
+                }
+                else if (source == DbSource.Smash)
+                {
+                    filename = SMASH_DB_FILENAME;
+                }
+                else
+                {
+                    return false;
+                }
+
+                StreamWriter userinfo = new StreamWriter(filename);
+                userinfo.Write(json);
+                userinfo.Close();
+
+                return true;
+            }
+            catch
+            {
+                Console.WriteLine("Couldn't save json.");
+                return false;
             }
         }
     }

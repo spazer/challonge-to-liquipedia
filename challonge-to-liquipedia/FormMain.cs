@@ -11,14 +11,13 @@ using System.Net;
 using System.IO;
 using challonge_to_liquipedia.JSON_Structure;
 using System.Text.RegularExpressions;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 
 namespace challonge_to_liquipedia
 {
     public partial class FormMain : Form
     {
-        static string AKA_URI = "http://wiki.teamliquid.net/smash/api.php?action=parse&page=Liquipedia:Players_Regex&prop=revid|wikitext&format=json";
+        static string SMASH_DB_URI = "http://wiki.teamliquid.net/smash/api.php?action=parse&page=Liquipedia:Players_Regex&prop=revid|wikitext&format=json";
+        static string FIGHTERS_DB_URI = "http://wiki.teamliquid.net/fighters/api.php?action=parse&page=Liquipedia:Players_Regex&prop=revid|wikitext&format=json";
 
         static string BASE_URI = "https://api.challonge.com/v1/tournaments/";
         static string EXTENSION_URI = ".json";
@@ -48,7 +47,14 @@ namespace challonge_to_liquipedia
                 Console.WriteLine("No saved credentials.");
             }
 
-            playerdb = new PlayerDatabase();
+            if (radioButtonSmash.Checked == true)
+            {
+                playerdb = new PlayerDatabase(PlayerDatabase.DbSource.Smash);
+            }
+            else if (radioButtonFighters.Checked == true)
+            {
+                playerdb = new PlayerDatabase(PlayerDatabase.DbSource.Fighters);
+            }
             UpdateRevID();
         }
 
@@ -113,6 +119,11 @@ namespace challonge_to_liquipedia
                 client.QueryString.Add("include_participants", "1");
                 client.QueryString.Add("include_matches", "1");
                 json = client.DownloadString(downloadURL);
+
+                // Convert json to UTF-8 for foreign text
+                byte[] bytes = Encoding.Default.GetBytes(json);
+                json = Encoding.UTF8.GetString(bytes);
+
                 richTextBoxOutput.Text = json;
             }
             catch (WebException exception)
@@ -173,7 +184,7 @@ namespace challonge_to_liquipedia
 
             if (richTextBoxWinnersInput.Text != string.Empty)
             {
-                output += "===Winners Bracket===\r\n";
+                output += "==Winners Bracket==\r\n";
                 output += richTextBoxWinnersInput.Text;
                 fillBracketSingles((int)numericUpDownWinnersStart.Value, (int)numericUpDownWinnersEnd.Value, (int)numericUpDownWinnersOffset.Value, ref output);
                 output += "\r\n";
@@ -181,7 +192,7 @@ namespace challonge_to_liquipedia
 
             if (richTextBoxLosersInput.Text != string.Empty)
             {
-                output += "===Losers Bracket===\r\n";
+                output += "==Losers Bracket==\r\n";
                 output += richTextBoxLosersInput.Text;
                 fillBracketSingles(-(int)numericUpDownLosersStart.Value, -(int)numericUpDownLosersEnd.Value, (int)numericUpDownLosersOffset.Value, ref output);
                 output += "\r\n";
@@ -429,8 +440,6 @@ namespace challonge_to_liquipedia
             {
                 List<JSON_Structure.Match> tempList = roundList[roundList.ElementAt(i).Key];
 
-                //tempList = tempList.OrderBy(x => x.id).ToList();
-
                 for (int j = 0; j < tempList.Count; j++)
                 {
                     tempList[j].matchnumber = j + 1;
@@ -537,10 +546,6 @@ namespace challonge_to_liquipedia
                 entrantList.Add(root.tournament.participants[i].participant.id, new Entrant(name));
             }
 
-            // Todo:
-            // Normalize names using regex
-            // Insert flags where available
-
             // Bring up the player replacement window
             FormPlayerReplace formReplace = new FormPlayerReplace(ref entrantList, playerdb);
             this.Hide();
@@ -569,14 +574,9 @@ namespace challonge_to_liquipedia
             }
             else
             {
-                //result = inputUri.AbsolutePath.Substring(1);
-
                 return inputUri.AbsolutePath.Substring(1);
             }
         }
-
-
-        
 
         #region Fill Methods
         /// <summary>
@@ -770,34 +770,79 @@ namespace challonge_to_liquipedia
         }
         #endregion
 
+        /// <summary>
+        /// Indicates whether an integer is a power of 2
+        /// </summary>
+        /// <param name="x"></param>
+        /// <returns></returns>
         bool IsPowerOfTwo(int x)
         {
             return (x & (x - 1)) == 0;
         }
 
+        /// <summary>
+        /// Retrieves a regex AKA database from Liquipedia, and parses it
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void buttonAKA_Click(object sender, EventArgs e)
         {
             WebClient client = new WebClient();
-            string json = client.DownloadString(AKA_URI);
+
+            // Decide on the URL to use
+            string json = string.Empty;
+            if (radioButtonSmash.Checked)
+            {
+                json = client.DownloadString(SMASH_DB_URI);
+            }
+            else if (radioButtonFighters.Checked)
+            {
+                json = client.DownloadString(FIGHTERS_DB_URI);
+            }
+            else
+            {
+                return;
+            }
+
             richTextBoxOutput.Text = json;
 
-            // Save data to file
-            try
+            // Save the json to file, then read the file
+            if (radioButtonSmash.Checked)
             {
-                StreamWriter userinfo = new StreamWriter(@"AkaDatabase.json");
-                userinfo.Write(json);
-                userinfo.Close();
+                if (!playerdb.SaveDatabase(json, PlayerDatabase.DbSource.Smash))
+                {
+                    richTextBoxOutput.Text = "Could not save Smash Database";
+                }
+
+                if (!playerdb.ReadDatabaseFromFile(PlayerDatabase.DbSource.Smash))
+                {
+                    richTextBoxOutput.Text = "Could not retrieve Smash Database";
+                }
             }
-            catch
+            else if (radioButtonFighters.Checked)
             {
-                Console.WriteLine("Couldn't save json.");
+                if (!playerdb.SaveDatabase(json, PlayerDatabase.DbSource.Fighters))
+                {
+                    richTextBoxOutput.Text = "Could not save Fighters Database";
+                }
+
+                if (!playerdb.ReadDatabaseFromFile(PlayerDatabase.DbSource.Fighters))
+                {
+                    richTextBoxOutput.Text = "Could not retrieve Fighters Database";
+                }
+            }
+            else
+            {
+                return;
             }
 
-            
-            playerdb.ReadDatabaseFromFile();
+            // Update the revision number
             UpdateRevID();
         }
 
+        /// <summary>
+        /// Updates the revision number of the AKA database
+        /// </summary>
         private void UpdateRevID()
         {
             if (playerdb == null) return;
@@ -811,6 +856,28 @@ namespace challonge_to_liquipedia
             else
             {
                 labelAkaDatabaseRev.Text = "Rev: " + revID.ToString();
+            }
+        }
+
+        private void radioButtonDatabase_CheckedChanged(object sender, EventArgs e)
+        {
+            if (radioButtonSmash.Checked)
+            {
+                if (!playerdb.ReadDatabaseFromFile(PlayerDatabase.DbSource.Smash))
+                {
+                    richTextBoxOutput.Text = "Could not retrieve Smash Database";
+                }
+            }
+            else if (radioButtonFighters.Checked)
+            {
+                if (!playerdb.ReadDatabaseFromFile(PlayerDatabase.DbSource.Fighters))
+                {
+                    richTextBoxOutput.Text = "Could not retrieve Fighters Database";
+                }
+            }
+            else
+            {
+                return;
             }
         }
     }
