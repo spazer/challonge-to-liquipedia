@@ -221,8 +221,11 @@ namespace challonge_to_liquipedia
 
                                 if (index != -1)
                                 {
-                                    root.tournament.matches[i].match.entrant1wins = int.Parse(root.tournament.matches[i].match.scores_csv.Substring(0, index));
-                                    root.tournament.matches[i].match.entrant2wins = int.Parse(root.tournament.matches[i].match.scores_csv.Substring(index + 1, root.tournament.matches[i].match.scores_csv.Length - index - 1));
+                                    int temp = 0;
+                                    int.TryParse(root.tournament.matches[i].match.scores_csv.Substring(0, index), out temp);
+                                    root.tournament.matches[i].match.entrant1wins = temp;
+                                    int.TryParse(root.tournament.matches[i].match.scores_csv.Substring(index + 1, root.tournament.matches[i].match.scores_csv.Length - index - 1), out temp);
+                                    root.tournament.matches[i].match.entrant2wins = temp;
                                     scoreFound = true;
                                 }
                             }
@@ -252,12 +255,18 @@ namespace challonge_to_liquipedia
                 }
             }
 
+            // Sort all rounds by identifier (A->Z, then AA->ZZ)
+            for (int i = 0; i < roundList.Count; i++)
+            {
+                roundList[roundList.ElementAt(i).Key] = roundList.ElementAt(i).Value.OrderBy(x => x.identifier.Length).ThenBy(x => x.identifier).ToList();
+            }
+
             // Only perform the entrants check if rounds 1 and 2 exist for winners and losers
             if (roundList.ContainsKey(1) && roundList.ContainsKey(2) && roundList.ContainsKey(-1) && roundList.ContainsKey(-2))
             {
-                // Insert byes into round 1 and -1 if we don't have a power of 2
+                // Insert byes into round 1 and -1 if round 1 doesn't have double the games of round 2
                 int r1count = roundList[1].Count;
-                if (!IsPowerOfTwo(roundList[1].Count))
+                if (roundList[1].Count != roundList[2].Count * 2)
                 {
                     // Reconstruct the entirety of round 1 based on round 2 prerequisite matches
                     roundList[1].Clear();
@@ -319,7 +328,7 @@ namespace challonge_to_liquipedia
                     // Refresh the r1 count. l1 should be half of this number.
                     int l1count = roundList[1].Count / 2;
 
-                    // If l2 has less entries than l1, that means all of l2 has l1 prerequisites
+                    // If l2 has less entries than l1count, that means all of l2 has l1 prerequisites
                     if (roundList[-2].Count < l1count)
                     {
                         // Reconstruct the entirety of round -1 based on round -2 prerequisite matches
@@ -335,7 +344,7 @@ namespace challonge_to_liquipedia
                                 newMatch.player2_id = PLAYER_BYE;
                                 newMatch.winner_id = l2match.player1_id;
                                 newMatch.loser_id = PLAYER_BYE;
-                                newMatch.round = 1;
+                                newMatch.round = -1;
                                 newMatch.scores_csv = "1-0";
                                 roundList[-1].Add(newMatch);
                             }
@@ -346,7 +355,24 @@ namespace challonge_to_liquipedia
                                 {
                                     if (root.tournament.matches[i].match.id == l2match.player1_prereq_match_id)
                                     {
-                                        roundList[-1].Add(root.tournament.matches[i].match);
+                                        // Add a bye if the prereq is from the winners bracket
+                                        if (root.tournament.matches[i].match.round > 0)
+                                        {
+                                            JSON_Structure.Match newMatch = new JSON_Structure.Match();
+
+                                            newMatch.player1_id = l2match.player1_id;
+                                            newMatch.player2_id = PLAYER_BYE;
+                                            newMatch.winner_id = l2match.player1_id;
+                                            newMatch.loser_id = PLAYER_BYE;
+                                            newMatch.round = -1;
+                                            newMatch.scores_csv = "1-0";
+                                            roundList[-1].Add(newMatch);
+                                        }
+                                        else
+                                        {
+                                            roundList[-1].Add(root.tournament.matches[i].match);
+                                        }
+
                                         break;
                                     }
                                 }
@@ -361,7 +387,7 @@ namespace challonge_to_liquipedia
                                 newMatch.player2_id = PLAYER_BYE;
                                 newMatch.winner_id = l2match.player2_id;
                                 newMatch.loser_id = PLAYER_BYE;
-                                newMatch.round = 1;
+                                newMatch.round = -1;
                                 newMatch.scores_csv = "1-0";
                                 roundList[-1].Add(newMatch);
                             }
@@ -372,7 +398,24 @@ namespace challonge_to_liquipedia
                                 {
                                     if (root.tournament.matches[i].match.id == l2match.player2_prereq_match_id)
                                     {
-                                        roundList[-1].Add(root.tournament.matches[i].match);
+                                        // Add a bye if the prereq is from the winners bracket
+                                        if (root.tournament.matches[i].match.round > 0)
+                                        {
+                                            JSON_Structure.Match newMatch = new JSON_Structure.Match();
+
+                                            newMatch.player1_id = l2match.player2_id;
+                                            newMatch.player2_id = PLAYER_BYE;
+                                            newMatch.winner_id = l2match.player2_id;
+                                            newMatch.loser_id = PLAYER_BYE;
+                                            newMatch.round = -1;
+                                            newMatch.scores_csv = "1-0";
+                                            roundList[-1].Add(newMatch);
+                                        }
+                                        else
+                                        {
+                                            roundList[-1].Add(root.tournament.matches[i].match);
+                                        }
+
                                         break;
                                     }
                                 }
@@ -435,7 +478,7 @@ namespace challonge_to_liquipedia
 
 
             // Sort rounds and sets
-            roundList = roundList.OrderBy(x => Math.Abs(x.Key)).ToDictionary(x => x.Key, x => x.Value);
+            //roundList = roundList.OrderBy(x => Math.Abs(x.Key)).ToDictionary(x => x.Key, x => x.Value);
             for (int i = 0; i < roundList.Count; i++)
             {
                 List<JSON_Structure.Match> tempList = roundList[roundList.ElementAt(i).Key];
