@@ -91,6 +91,7 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>Matches.resx</DependentUpon>
     </Compile>
+    <Compile Include="TableEntryDoubles.cs" />
     <Compile Include="TableEntry.cs" />
     <EmbeddedResource Include="FormMain.resx">
       <DependentUpon>FormMain.cs</DependentUpon>

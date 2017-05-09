@@ -16,6 +16,9 @@ namespace challonge_to_liquipedia
 {
     public partial class FormMain : Form
     {
+        static string DEFINALSMWBRACKET = "{{DEFinalSmwBracket\r\n|tourneylink=\r\n|tourneyname=\r\n|l1placement=4\r\n|r2placement=3\r\n|r3loserplacement=2\r\n|r3winnerplacement=1\r\n\r\n<!-- FROM WINNERS -->\r\n|r1m1p1= |r1m1p1flag= |r1m1p1score=\r\n|r1m1p2= |r1m1p2flag= |r1m1p2score=\r\n|r1m1win=\r\n\r\n<!-- FROM LOSERS -->\r\n|l1m1p1= |l1m1p1flag= |l1m1p1score=\r\n|l1m1p2= |l1m1p2flag= |l1m1p2score=\r\n|l1m1win=\r\n\r\n<!-- LOSERS FINALS -->\r\n|r2m1p1= |r2m1p1flag= |r2m1p1score=\r\n|r2m1p2= |r2m1p2flag= |r2m1p2score=\r\n|r2m1win=\r\n\r\n<!-- GRAND FINALS -->\r\n|r3m1p1= |r3m1p1flag= |r3m1p1score= |r3m2p1score=\r\n|r3m1p2= |r3m1p2flag= |r3m1p2score= |r3m2p2score=\r\n|r3m1win=\r\n}}";
+        static string DEFINALDOUBLESSMWBRACKET = "{{DEFinalDoublesSmwBracket\r\n|tourneylink=\r\n|tourneyname=\r\n|l1placement=4\r\n|r2placement=3\r\n|r3loserplacement=2\r\n|r3winnerplacement=1\r\n\r\n<!-- FROM WINNERS -->\r\n|r1m1t1p1= |r1m1t1p1flag=\r\n|r1m1t1p2= |r1m1t1p2flag= |r1m1t1score=\r\n|r1m1t2p1= |r1m1t2p1flag=\r\n|r1m1t2p2= |r1m1t2p2flag= |r1m1t2score=\r\n|r1m1win=\r\n\r\n<!-- FROM LOSERS -->\r\n|l1m1t1p1= |l1m1t1p1flag=\r\n|l1m1t1p2= |l1m1t1p2flag= |l1m1t1score=\r\n|l1m1t2p1= |l1m1t2p1flag=\r\n|l1m1t2p2= |l1m1t2p2flag= |l1m1t2score=\r\n|l1m1win=\r\n\r\n<!-- LOSERS FINALS -->\r\n|r2m1t1p1= |r2m1t1p1flag=\r\n|r2m1t1p2= |r2m1t1p2flag= |r2m1t1score=\r\n|r2m1t2p1= |r2m1t2p1flag=\r\n|r2m1t2p2= |r2m1t2p2flag= |r2m1t2score=\r\n|r2m1win=\r\n\r\n<!-- GRAND FINALS -->\r\n|r3m1t1p1= |r3m1t1p1flag=\r\n|r3m1t1p2= |r3m1t1p2flag= |r3m1t1score= |r3m2t1score=\r\n|r3m1t2p1= |r3m1t2p1flag=\r\n|r3m1t2p2= |r3m1t2p2flag= |r3m1t2score= |r3m2t2score=\r\n|r3m1win=\r\n}}";
+
         static string SMASH_DB_URI = "http://wiki.teamliquid.net/smash/api.php?action=parse&page=Liquipedia:Players_Regex&prop=revid|wikitext&format=json";
         static string FIGHTERS_DB_URI = "http://wiki.teamliquid.net/fighters/api.php?action=parse&page=Liquipedia:Players_Regex&prop=revid|wikitext&format=json";
 
@@ -24,11 +27,14 @@ namespace challonge_to_liquipedia
         static int PLAYER_BYE = 0;
 
         Dictionary<int, List<JSON_Structure.Match>> roundList = new Dictionary<int, List<JSON_Structure.Match>>();
-        Dictionary<int, Entrant> entrantList = new Dictionary<int, Entrant>();
+        Dictionary<int, List<Entrant>> entrantList = new Dictionary<int, List<Entrant>>();
 
         PlayerDatabase playerdb;
 
         #region Form
+        /// <summary>
+        /// Main form constructor
+        /// </summary>
         public FormMain()
         {
             InitializeComponent();
@@ -56,6 +62,9 @@ namespace challonge_to_liquipedia
                 playerdb = new PlayerDatabase(PlayerDatabase.DbSource.Fighters);
             }
             UpdateRevID();
+
+            // Set
+            radioButtonSinglesDoubles_CheckedChanged(this, new EventArgs());
         }
 
         /// <summary>
@@ -156,6 +165,12 @@ namespace challonge_to_liquipedia
             JsonParser parser = new JsonParser();
             RootObject root = parser.ParseTournament(json);
 
+            // Error checking
+            if (root == null)
+            {
+                richTextBoxOutput.Text = "Could not retrieve json from link. Ensure the URL is correct. Try removing the end slash if one exists.";
+            }
+
             // Detect double elim brackets
             if (root.tournament.tournament_type != "double elimination")
             {
@@ -182,26 +197,124 @@ namespace challonge_to_liquipedia
                 richTextBoxOutput.Text = "Acquire data first";
             }
 
-            if (richTextBoxWinnersInput.Text != string.Empty)
+            if (radioButtonSingles.Checked)
             {
-                output += "==Winners Bracket==\r\n";
-                output += richTextBoxWinnersInput.Text;
-                fillBracketSingles((int)numericUpDownWinnersStart.Value, (int)numericUpDownWinnersEnd.Value, (int)numericUpDownWinnersOffset.Value, ref output);
-                output += "\r\n";
-            }
+                if (richTextBoxWinnersInput.Text != string.Empty)
+                {
+                    output += "==Winners Bracket==\r\n";
+                    output += richTextBoxWinnersInput.Text;
+                    FillBracketSingles((int)numericUpDownWinnersStart.Value, (int)numericUpDownWinnersEnd.Value, (int)numericUpDownWinnersOffset.Value, ref output);
+                    output += "\r\n";
+                }
 
-            if (richTextBoxLosersInput.Text != string.Empty)
+                if (richTextBoxLosersInput.Text != string.Empty)
+                {
+                    output += "==Losers Bracket==\r\n";
+                    output += richTextBoxLosersInput.Text;
+                    FillBracketSingles(-(int)numericUpDownLosersStart.Value, -(int)numericUpDownLosersEnd.Value, (int)numericUpDownLosersOffset.Value, ref output);
+                    output += "\r\n";
+                }
+
+                if (checkBoxFinalBracket.Checked)
+                {
+                    output += "==Final Singles Bracket==\r\n";
+                    output += FillFinalBracketSingles();
+                }
+            }
+            else
             {
-                output += "==Losers Bracket==\r\n";
-                output += richTextBoxLosersInput.Text;
-                fillBracketSingles(-(int)numericUpDownLosersStart.Value, -(int)numericUpDownLosersEnd.Value, (int)numericUpDownLosersOffset.Value, ref output);
-                output += "\r\n";
+                if (richTextBoxWinnersInput.Text != string.Empty)
+                {
+                    output += "==Winners Bracket==\r\n";
+                    output += richTextBoxWinnersInput.Text;
+                    FillBracketDoubles((int)numericUpDownWinnersStart.Value, (int)numericUpDownWinnersEnd.Value, (int)numericUpDownWinnersOffset.Value, ref output);
+                    output += "\r\n";
+                }
+
+                if (richTextBoxLosersInput.Text != string.Empty)
+                {
+                    output += "==Losers Bracket==\r\n";
+                    output += richTextBoxLosersInput.Text;
+                    FillBracketDoubles(-(int)numericUpDownLosersStart.Value, -(int)numericUpDownLosersEnd.Value, (int)numericUpDownLosersOffset.Value, ref output);
+                    output += "\r\n";
+                }
+
+                if (checkBoxFinalBracket.Checked)
+                {
+                    output += "==Final Doubles Bracket==\r\n";
+                    output += FillFinalBracketDoubles();
+                }
             }
 
             richTextBoxOutput.Text = output;
         }
+
+        /// <summary>
+        /// Retrieves a regex AKA database from Liquipedia, and parses it
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void buttonAKA_Click(object sender, EventArgs e)
+        {
+            WebClient client = new WebClient();
+
+            // Decide on the URL to use
+            string json = string.Empty;
+            if (radioButtonSmash.Checked)
+            {
+                json = client.DownloadString(SMASH_DB_URI);
+            }
+            else if (radioButtonFighters.Checked)
+            {
+                json = client.DownloadString(FIGHTERS_DB_URI);
+            }
+            else
+            {
+                return;
+            }
+
+            richTextBoxOutput.Text = json;
+
+            // Save the json to file, then read the file
+            if (radioButtonSmash.Checked)
+            {
+                if (!playerdb.SaveDatabase(json, PlayerDatabase.DbSource.Smash))
+                {
+                    richTextBoxOutput.Text = "Could not save Smash Database";
+                }
+
+                if (!playerdb.ReadDatabaseFromFile(PlayerDatabase.DbSource.Smash))
+                {
+                    richTextBoxOutput.Text = "Could not retrieve Smash Database";
+                }
+            }
+            else if (radioButtonFighters.Checked)
+            {
+                if (!playerdb.SaveDatabase(json, PlayerDatabase.DbSource.Fighters))
+                {
+                    richTextBoxOutput.Text = "Could not save Fighters Database";
+                }
+
+                if (!playerdb.ReadDatabaseFromFile(PlayerDatabase.DbSource.Fighters))
+                {
+                    richTextBoxOutput.Text = "Could not retrieve Fighters Database";
+                }
+            }
+            else
+            {
+                return;
+            }
+
+            // Update the revision number
+            UpdateRevID();
+        }
         #endregion
 
+        #region JSON Parsing
+        /// <summary>
+        /// Get set list from json data
+        /// </summary>
+        /// <param name="root">json object</param>
         private void GetSets(ref RootObject root)
         {
             for (int i = 0; i < root.tournament.matches.Count(); i++)
@@ -565,28 +678,44 @@ namespace challonge_to_liquipedia
             }
         }
 
+        /// <summary>
+        /// Get entrants list from json data
+        /// </summary>
+        /// <param name="root">json object</param>
         private void GetEntrants(ref RootObject root)
         {
             // Populate the entrant list using the json data
             for (int i = 0; i < root.tournament.participants.Count(); i++)
             {
-                string name = root.tournament.participants[i].participant.name;
+                string inputName = root.tournament.participants[i].participant.name;
+                List<Entrant> newParticipant = new List<Entrant>();
 
-                // Remove tags where possible
-                if (name.Contains("|"))
+                if (radioButtonDoubles.Checked && (textBoxSeparator.Text != string.Empty))
                 {
-                    if (checkBoxTrimTags.Checked)
+                    Regex rgx = new Regex("(.*)" + Regex.Escape(textBoxSeparator.Text) + "(.*)");
+                    System.Text.RegularExpressions.Match match = rgx.Match(inputName);
+
+                    if (match.Success)
                     {
-                        int start = name.IndexOf("|") + 1;
-                        name = name.Substring(start).Trim();
+                        Entrant player1 = new Entrant(RemoveTags(match.Groups[1].Value));
+                        Entrant player2 = new Entrant(RemoveTags(match.Groups[2].Value));
+                        newParticipant.Add(player1);
+                        newParticipant.Add(player2);
                     }
                     else
                     {
-                        name = name.Replace("|", "{{!}}");
+                        Entrant player1 = new Entrant(inputName);
+                        Entrant player2 = new Entrant(string.Empty);
+                        newParticipant.Add(player1);
                     }
                 }
+                else
+                {
+                    Entrant player1 = new Entrant(RemoveTags(inputName));
+                    newParticipant.Add(player1);
+                }
 
-                entrantList.Add(root.tournament.participants[i].participant.id, new Entrant(name));
+                entrantList.Add(root.tournament.participants[i].participant.id, newParticipant);
             }
 
             // Bring up the player replacement window
@@ -595,9 +724,34 @@ namespace challonge_to_liquipedia
             formReplace.ShowDialog();
             this.Show();
         }
+        #endregion
 
         /// <summary>
-        /// Gets the subdomain if one exists "___.challonge.com" versus "challonge.com" and generates the proper tournament name
+        /// Removes pipes from tags
+        /// </summary>
+        /// <param name="input">Input name</param>
+        /// <returns>Name with pipes removed/replaced</returns>
+        private string RemoveTags(string input)
+        {
+            // Remove tags where possible
+            if (input.Contains("|"))
+            {
+                if (checkBoxTrimTags.Checked)
+                {
+                    int start = input.IndexOf("|") + 1;
+                    input = input.Substring(start).Trim();
+                }
+                else
+                {
+                    input = input.Replace("|", "{{!}}");
+                }
+            }
+
+            return input;
+        }
+
+        /// <summary>
+        /// Gets the subdomain if one exists ("___.challonge.com" versus "challonge.com") and generates the proper tournament name
         /// in the form *subdomain*-*bracket name*
         /// </summary>
         /// <param name="inputUri">Input URI</param>
@@ -622,6 +776,8 @@ namespace challonge_to_liquipedia
         }
 
         #region Fill Methods
+
+        #region Singles
         /// <summary>
         /// Fills bracket wikicode
         /// </summary>
@@ -629,12 +785,10 @@ namespace challonge_to_liquipedia
         /// <param name="endRound">Round to stop filling with</param>
         /// <param name="offset">Number of rounds to offset by</param>
         /// <param name="bracketText">A string containing the bracket wikicode</param>
-        private void fillBracketSingles(int startRound, int endRound, int offset, ref string bracketText)
+        private void FillBracketSingles(int startRound, int endRound, int offset, ref string bracketText)
         {
             int increment;
             string bracketSide;
-
-            int lastround = roundList.Keys.Max();
 
             if (startRound > 0)
             {
@@ -661,137 +815,463 @@ namespace challonge_to_liquipedia
 
                     outputRound = Math.Abs(i) + offset;
 
-                    // Check for player byes
-                    if (currentSet.player1_id == PLAYER_BYE && currentSet.player2_id == PLAYER_BYE)
-                    {
-                        // If both players are byes, skip this entry
-                        continue;
-                    }
-                    else if (currentSet.player1_id == PLAYER_BYE)
-                    {
-                        // Fill in player 1 as a bye if fill byes is checked
-                        if (checkBoxFillByes.Checked == true) FillLPParameter(ref bracketText, bracketSide + outputRound + LpStrings.Match + currentSet.matchnumber + LpStrings.P1, "Bye");
+                    FillSetSingles(ref bracketText, bracketSide + outputRound + LpStrings.Match + currentSet.matchnumber, currentSet);
+                }
+            }
+        }
 
-                        // Give player 2 a checkmark
-                        FillLPParameter(ref bracketText, bracketSide + outputRound + LpStrings.Match + currentSet.matchnumber + LpStrings.P2, entrantList[currentSet.player2_id].Gamertag);
-                        FillLPParameter(ref bracketText, bracketSide + outputRound + LpStrings.Match + currentSet.matchnumber + LpStrings.P2 + LpStrings.Flag, entrantList[currentSet.player2_id].Flag);
-                        if (checkBoxFillByeWins.Checked == true)
+        /// <summary>
+        /// Fill one singles set
+        /// </summary>
+        /// <param name="bracketText">Base bracket text in wikicode</param>
+        /// <param name="matchIdentifier">Round and match identifier (eg. "r1m1")</param>
+        /// <param name="currentSet">Object of the set to input</param>
+        private void FillSetSingles(ref string bracketText, string matchIdentifier, JSON_Structure.Match currentSet)
+        {
+            // Check for player byes
+            if (currentSet.player1_id == PLAYER_BYE && currentSet.player2_id == PLAYER_BYE)
+            {
+                // If both players are byes, skip this entry
+                return;
+            }
+            else if (currentSet.player1_id == PLAYER_BYE)
+            {
+                // Fill in player 1 as a bye if fill byes is checked
+                if (checkBoxFillByes.Checked == true) FillLPParameter(ref bracketText, matchIdentifier + LpStrings.P1, "Bye");
+
+                // Give player 2 a checkmark
+                FillLPParameter(ref bracketText, matchIdentifier + LpStrings.P2, entrantList[currentSet.player2_id][0].Gamertag);
+                FillLPParameter(ref bracketText, matchIdentifier + LpStrings.P2 + LpStrings.Flag, entrantList[currentSet.player2_id][0].Flag);
+                if (checkBoxFillByeWins.Checked == true)
+                {
+                    FillLPParameter(ref bracketText, matchIdentifier + LpStrings.P2 + LpStrings.Score, LpStrings.Checkmark);
+                    FillLPParameter(ref bracketText, matchIdentifier + LpStrings.Win, "2");
+                }
+            }
+            else if (currentSet.player2_id == PLAYER_BYE)
+            {
+                // Fill in player 2 as a bye
+                if (checkBoxFillByes.Checked == true) FillLPParameter(ref bracketText, matchIdentifier + LpStrings.P2, "Bye");
+
+                // Give player 1 a checkmark
+                FillLPParameter(ref bracketText, matchIdentifier + LpStrings.P1, entrantList[currentSet.player1_id][0].Gamertag);
+                FillLPParameter(ref bracketText, matchIdentifier + LpStrings.P1 + LpStrings.Flag, entrantList[currentSet.player1_id][0].Flag);
+
+                if (checkBoxFillByeWins.Checked == true)
+                {
+                    FillLPParameter(ref bracketText, matchIdentifier + LpStrings.P1 + LpStrings.Score, LpStrings.Checkmark);
+                    FillLPParameter(ref bracketText, matchIdentifier + LpStrings.Win, "1");
+                }
+            }
+            else
+            {
+                // Fill in the set normally
+                FillLPParameter(ref bracketText, matchIdentifier + LpStrings.P1, entrantList[currentSet.player1_id][0].Gamertag);
+                FillLPParameter(ref bracketText, matchIdentifier + LpStrings.P1 + LpStrings.Flag, entrantList[currentSet.player1_id][0].Flag);
+                FillLPParameter(ref bracketText, matchIdentifier + LpStrings.P2, entrantList[currentSet.player2_id][0].Gamertag);
+                FillLPParameter(ref bracketText, matchIdentifier + LpStrings.P2 + LpStrings.Flag, entrantList[currentSet.player2_id][0].Flag);
+
+
+                // Check for DQs
+                if (currentSet.entrant1wins == -1)
+                {
+                    FillLPParameter(ref bracketText, matchIdentifier + LpStrings.P1 + LpStrings.Score, "DQ");
+                    FillLPParameter(ref bracketText, matchIdentifier + LpStrings.P2 + LpStrings.Score, LpStrings.Checkmark);
+                }
+                else if (currentSet.entrant2wins == -1)
+                {
+                    FillLPParameter(ref bracketText, matchIdentifier + LpStrings.P2 + LpStrings.Score, "DQ");
+                    FillLPParameter(ref bracketText, matchIdentifier + LpStrings.P1 + LpStrings.Score, LpStrings.Checkmark);
+                }
+                else
+                {
+                    if (currentSet.round == roundList.Keys.Max() && currentSet.player1_prereq_match_id == currentSet.player2_prereq_match_id)
+                    {
+                        if (currentSet.entrant1wins != -99 && currentSet.entrant2wins != -99)
                         {
-                            FillLPParameter(ref bracketText, bracketSide + outputRound + LpStrings.Match + currentSet.matchnumber + LpStrings.P2 + LpStrings.Score, LpStrings.Checkmark);
-                            FillLPParameter(ref bracketText, bracketSide + outputRound + LpStrings.Match + currentSet.matchnumber + LpStrings.Win, "2");
+                            FillLPParameter(ref bracketText, matchIdentifier + LpStrings.P2 + LpStrings.Score, currentSet.entrant1wins.ToString());
+                            FillLPParameter(ref bracketText, matchIdentifier + LpStrings.P1 + LpStrings.Score, currentSet.entrant2wins.ToString());
                         }
-                    }
-                    else if (currentSet.player2_id == PLAYER_BYE)
-                    {
-                        // Fill in player 2 as a bye
-                        if (checkBoxFillByes.Checked == true) FillLPParameter(ref bracketText, bracketSide + outputRound + LpStrings.Match + currentSet.matchnumber + LpStrings.P2, "Bye");
-
-                        // Give player 1 a checkmark
-                        FillLPParameter(ref bracketText, bracketSide + outputRound + LpStrings.Match + currentSet.matchnumber + LpStrings.P1, entrantList[currentSet.player1_id].Gamertag);
-                        FillLPParameter(ref bracketText, bracketSide + outputRound + LpStrings.Match + currentSet.matchnumber + LpStrings.P1 + LpStrings.Flag, entrantList[currentSet.player1_id].Flag);
-
-                        if (checkBoxFillByeWins.Checked == true)
+                        else
                         {
-                            FillLPParameter(ref bracketText, bracketSide + outputRound + LpStrings.Match + currentSet.matchnumber + LpStrings.P1 + LpStrings.Score, LpStrings.Checkmark);
-                            FillLPParameter(ref bracketText, bracketSide + outputRound + LpStrings.Match + currentSet.matchnumber + LpStrings.Win, "1");
+                            if (currentSet.winner_id == currentSet.player1_id)
+                            {
+                                FillLPParameter(ref bracketText, matchIdentifier + LpStrings.P2 + LpStrings.Score, "{{win}}");
+                            }
+                            else if (currentSet.winner_id == currentSet.player2_id)
+                            {
+                                FillLPParameter(ref bracketText, matchIdentifier + LpStrings.P1 + LpStrings.Score, "{{win}}");
+                            }
                         }
                     }
                     else
                     {
-                        // Fill in the set normally
-                        FillLPParameter(ref bracketText, bracketSide + outputRound + LpStrings.Match + currentSet.matchnumber + LpStrings.P1, entrantList[currentSet.player1_id].Gamertag);
-                        FillLPParameter(ref bracketText, bracketSide + outputRound + LpStrings.Match + currentSet.matchnumber + LpStrings.P1 + LpStrings.Flag, entrantList[currentSet.player1_id].Flag);
-                        FillLPParameter(ref bracketText, bracketSide + outputRound + LpStrings.Match + currentSet.matchnumber + LpStrings.P2, entrantList[currentSet.player2_id].Gamertag);
-                        FillLPParameter(ref bracketText, bracketSide + outputRound + LpStrings.Match + currentSet.matchnumber + LpStrings.P2 + LpStrings.Flag, entrantList[currentSet.player2_id].Flag);
-
-
-                        // Check for DQs
-                        if (currentSet.entrant1wins == -1)
+                        if (currentSet.entrant1wins != -99 && currentSet.entrant2wins != -99)
                         {
-                            FillLPParameter(ref bracketText, bracketSide + outputRound + LpStrings.Match + currentSet.matchnumber + LpStrings.P1 + LpStrings.Score, "DQ");
-                            FillLPParameter(ref bracketText, bracketSide + outputRound + LpStrings.Match + currentSet.matchnumber + LpStrings.P2 + LpStrings.Score, LpStrings.Checkmark);
-                        }
-                        else if (currentSet.entrant2wins == -1)
-                        {
-                            FillLPParameter(ref bracketText, bracketSide + outputRound + LpStrings.Match + currentSet.matchnumber + LpStrings.P2 + LpStrings.Score, "DQ");
-                            FillLPParameter(ref bracketText, bracketSide + outputRound + LpStrings.Match + currentSet.matchnumber + LpStrings.P1 + LpStrings.Score, LpStrings.Checkmark);
-                        }
-                        else
-                        {
-                            if (currentSet.round == lastround && currentSet.player1_prereq_match_id == currentSet.player2_prereq_match_id)
-                            {
-                                if (currentSet.entrant1wins != -99 && currentSet.entrant2wins != -99)
-                                {
-                                    FillLPParameter(ref bracketText, bracketSide + outputRound + LpStrings.Match + currentSet.matchnumber + LpStrings.P2 + LpStrings.Score, currentSet.entrant1wins.ToString());
-                                    FillLPParameter(ref bracketText, bracketSide + outputRound + LpStrings.Match + currentSet.matchnumber + LpStrings.P1 + LpStrings.Score, currentSet.entrant2wins.ToString());
-                                }
-                                else
-                                {
-                                    if (currentSet.winner_id == currentSet.player1_id)
-                                    {
-                                        FillLPParameter(ref bracketText, bracketSide + outputRound + LpStrings.Match + currentSet.matchnumber + LpStrings.P2 + LpStrings.Score, "{{win}}");
-                                    }
-                                    else if (currentSet.winner_id == currentSet.player2_id)
-                                    {
-                                        FillLPParameter(ref bracketText, bracketSide + outputRound + LpStrings.Match + currentSet.matchnumber + LpStrings.P1 + LpStrings.Score, "{{win}}");
-                                    }
-                                }
-                            }
-                            else
-                            {
-                                if (currentSet.entrant1wins != -99 && currentSet.entrant2wins != -99)
-                                {
-                                    FillLPParameter(ref bracketText, bracketSide + outputRound + LpStrings.Match + currentSet.matchnumber + LpStrings.P1 + LpStrings.Score, currentSet.entrant1wins.ToString());
-                                    FillLPParameter(ref bracketText, bracketSide + outputRound + LpStrings.Match + currentSet.matchnumber + LpStrings.P2 + LpStrings.Score, currentSet.entrant2wins.ToString());
-                                }
-                                else
-                                {
-                                    if (currentSet.winner_id == currentSet.player1_id)
-                                    {
-                                        FillLPParameter(ref bracketText, bracketSide + outputRound + LpStrings.Match + currentSet.matchnumber + LpStrings.P1 + LpStrings.Score, "{{win}}");
-                                    }
-                                    else if (currentSet.winner_id == currentSet.player2_id)
-                                    {
-                                        FillLPParameter(ref bracketText, bracketSide + outputRound + LpStrings.Match + currentSet.matchnumber + LpStrings.P2 + LpStrings.Score, "{{win}}");
-                                    }
-                                }
-                            }
-                        }
-
-                        // Set the winner
-                        if (currentSet.round == lastround && currentSet.player1_prereq_match_id == currentSet.player2_prereq_match_id)
-                        {
-                            if (currentSet.winner_id == currentSet.player1_id)
-                            {
-                                FillLPParameter(ref bracketText, bracketSide + outputRound + LpStrings.Match + 1 + LpStrings.Win, "2");
-                            }
-                            else if (currentSet.winner_id == currentSet.player2_id)
-                            {
-                                FillLPParameter(ref bracketText, bracketSide + outputRound + LpStrings.Match + 1 + LpStrings.Win, "1");
-                            }
-                        }
-                        else if (currentSet.round == lastround && currentSet.matchnumber == 1 && roundList[i].Count > 1)
-                        {
-                            if (currentSet.winner_id == currentSet.player1_id)
-                            {
-                                FillLPParameter(ref bracketText, bracketSide + outputRound + LpStrings.Match + 1 + LpStrings.Win, "1");
-                            }
+                            FillLPParameter(ref bracketText, matchIdentifier + LpStrings.P1 + LpStrings.Score, currentSet.entrant1wins.ToString());
+                            FillLPParameter(ref bracketText, matchIdentifier + LpStrings.P2 + LpStrings.Score, currentSet.entrant2wins.ToString());
                         }
                         else
                         {
                             if (currentSet.winner_id == currentSet.player1_id)
                             {
-                                FillLPParameter(ref bracketText, bracketSide + outputRound + LpStrings.Match + currentSet.matchnumber + LpStrings.Win, "1");
+                                FillLPParameter(ref bracketText, matchIdentifier + LpStrings.P1 + LpStrings.Score, "{{win}}");
                             }
                             else if (currentSet.winner_id == currentSet.player2_id)
                             {
-                                FillLPParameter(ref bracketText, bracketSide + outputRound + LpStrings.Match + currentSet.matchnumber + LpStrings.Win, "2");
+                                FillLPParameter(ref bracketText, matchIdentifier + LpStrings.P2 + LpStrings.Score, "{{win}}");
                             }
                         }
                     }
                 }
+
+                // Set the winner
+                if (currentSet.winner_id == currentSet.player1_id)
+                {
+                    FillLPParameter(ref bracketText, matchIdentifier + LpStrings.Win, "1");
+                }
+                else if (currentSet.winner_id == currentSet.player2_id)
+                {
+                    FillLPParameter(ref bracketText, matchIdentifier + LpStrings.Win, "2");
+                }
             }
         }
+
+        /// <summary>
+        /// Fill a standard DE final singles bracket
+        /// </summary>
+        /// <returns>Final bracket text</returns>
+        private string FillFinalBracketSingles()
+        {
+            // Error checking
+            if (!checkBoxFinalBracket.Checked || roundList.Count == 0) return string.Empty;
+
+            string finaltext = DEFINALSMWBRACKET;
+
+            int playerCount = roundList[1].Count * 2;
+
+            for (int i = 0; i < 10; i++)
+            {
+                if (Math.Pow(2, i) >= playerCount)
+                {
+                    // i is winners finals. We want grand finals, so add 1 to the round
+                    int gfRound = i + 1;
+
+                    if (roundList.ContainsKey(gfRound))
+                    {
+                        JSON_Structure.Match currentSet = roundList[gfRound][0];
+
+                        if (currentSet.player1_id != PLAYER_BYE) FillLPParameter(ref finaltext, "r3m1p1", entrantList[currentSet.player1_id][0].Gamertag);
+                        if (currentSet.player1_id != PLAYER_BYE) FillLPParameter(ref finaltext, "r3m1p1flag", entrantList[currentSet.player1_id][0].Flag);
+                        if (currentSet.player1_id != PLAYER_BYE) FillLPParameter(ref finaltext, "r3m1p1score", currentSet.entrant1wins.ToString());
+
+                        if (currentSet.player2_id != PLAYER_BYE) FillLPParameter(ref finaltext, "r3m1p2", entrantList[currentSet.player2_id][0].Gamertag);
+                        if (currentSet.player2_id != PLAYER_BYE) FillLPParameter(ref finaltext, "r3m1p2flag", entrantList[currentSet.player2_id][0].Flag);
+                        if (currentSet.player2_id != PLAYER_BYE) FillLPParameter(ref finaltext, "r3m1p2score", currentSet.entrant2wins.ToString());
+
+                        // Check for a bracket reset. Entrant order is reversed on reset.
+                        if (roundList[gfRound].Count == 2)
+                        {
+                            if (roundList[gfRound][1].player1_id != PLAYER_BYE) FillLPParameter(ref finaltext, "r3m2p2score", roundList[gfRound][1].entrant1wins.ToString());
+                            if (roundList[gfRound][1].player2_id != PLAYER_BYE) FillLPParameter(ref finaltext, "r3m2p1score", roundList[gfRound][1].entrant2wins.ToString());
+
+                            if (roundList[gfRound][1].winner_id == roundList[gfRound][1].player1_id) FillLPParameter(ref finaltext, "r3m1win", "2");
+                            else if (roundList[gfRound][1].winner_id == roundList[gfRound][1].player2_id) FillLPParameter(ref finaltext, "r3m1win", "1");
+                        }
+                        else
+                        {
+                            if (currentSet.winner_id == currentSet.player1_id) FillLPParameter(ref finaltext, "r3m1win", "1");
+                            else if (currentSet.winner_id == currentSet.player2_id) FillLPParameter(ref finaltext, "r3m1win", "2");
+                        }
+
+                        // Find and fill the three preceding matches
+                        JSON_Structure.Match wfSet = setIDsearch(currentSet.player1_prereq_match_id);
+                        if (wfSet != null)
+                        {
+                            FillSetSingles(ref finaltext, "r1m1", wfSet);
+                        }
+
+                        JSON_Structure.Match lfSet = setIDsearch(currentSet.player2_prereq_match_id);
+                        if (lfSet != null)
+                        {
+                            FillSetSingles(ref finaltext, "r2m1", lfSet);
+
+                            JSON_Structure.Match lsSet = setIDsearch(lfSet.player2_prereq_match_id);
+                            if (lsSet != null)
+                            {
+                                FillSetSingles(ref finaltext, "l1m1", lsSet);
+                            }
+                        }
+                    }
+
+                    break;
+                }
+            }
+
+            return finaltext;
+        }
+        #endregion
+
+        #region Doubles
+        /// <summary>
+        /// Fills bracket wikicode
+        /// </summary>
+        /// <param name="startRound">Round to start filling with</param>
+        /// <param name="endRound">Round to stop filling with</param>
+        /// <param name="offset">Number of rounds to offset by</param>
+        /// <param name="bracketText">A string containing the bracket wikicode</param>
+        private void FillBracketDoubles(int startRound, int endRound, int offset, ref string bracketText)
+        {
+            int increment;
+            string bracketSide;
+
+            if (startRound > 0)
+            {
+                increment = 1;
+                bracketSide = LpStrings.WRound;
+            }
+            else
+            {
+                increment = -1;
+                bracketSide = LpStrings.LRound;
+            }
+
+            for (int i = startRound; Math.Abs(i) <= Math.Abs(endRound); i += increment)
+            {
+                int outputRound;
+
+                // Skip rounds that don't exist
+                if (!roundList.ContainsKey(i)) continue;
+
+                // Iterate through all sets in the round
+                for (int j = 0; j < roundList[i].Count; j++)
+                {
+                    JSON_Structure.Match currentSet = roundList[i][j];
+
+                    outputRound = Math.Abs(i) + offset;
+
+                    FillSetDoubles(ref bracketText, bracketSide + outputRound + LpStrings.Match + currentSet.matchnumber, currentSet);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Fill one doubles set
+        /// </summary>
+        /// <param name="bracketText">Base bracket text in wikicode</param>
+        /// <param name="matchIdentifier">Round and match identifier (eg. "r1m1")</param>
+        /// <param name="currentSet">Object of the set to input</param>
+        private void FillSetDoubles(ref string bracketText, string matchIdentifier, JSON_Structure.Match currentSet)
+        {
+            // Check for player byes
+            if (currentSet.player1_id == PLAYER_BYE && currentSet.player2_id == PLAYER_BYE)
+            {
+                // If both players are byes, skip this entry
+                return;
+            }
+            else if (currentSet.player1_id == PLAYER_BYE)
+            {
+                // Fill in player 1 as a bye if fill byes is checked
+                if (checkBoxFillByes.Checked == true)
+                {
+                    FillLPParameter(ref bracketText, matchIdentifier + LpStrings.T1 + LpStrings.P1, "Bye");
+                    FillLPParameter(ref bracketText, matchIdentifier + LpStrings.T1 + LpStrings.P2, "Bye");
+                }
+
+                // Give player 2 a checkmark
+                FillLPParameter(ref bracketText, matchIdentifier + LpStrings.T2 + LpStrings.P1, entrantList[currentSet.player2_id][0].Gamertag);
+                FillLPParameter(ref bracketText, matchIdentifier + LpStrings.T2 + LpStrings.P1 + LpStrings.Flag, entrantList[currentSet.player2_id][0].Flag);
+                FillLPParameter(ref bracketText, matchIdentifier + LpStrings.T2 + LpStrings.P2, entrantList[currentSet.player2_id][1].Gamertag);
+                FillLPParameter(ref bracketText, matchIdentifier + LpStrings.T2 + LpStrings.P2 + LpStrings.Flag, entrantList[currentSet.player2_id][1].Flag);
+                if (checkBoxFillByeWins.Checked == true)
+                {
+                    FillLPParameter(ref bracketText, matchIdentifier + LpStrings.T2 + LpStrings.Score, LpStrings.Checkmark);
+                    FillLPParameter(ref bracketText, matchIdentifier + LpStrings.Win, "2");
+                }
+            }
+            else if (currentSet.player2_id == PLAYER_BYE)
+            {
+                // Fill in player 2 as a bye
+                if (checkBoxFillByes.Checked == true)
+                {
+                    FillLPParameter(ref bracketText, matchIdentifier + LpStrings.T2 + LpStrings.P1, "Bye");
+                    FillLPParameter(ref bracketText, matchIdentifier + LpStrings.T2 + LpStrings.P2, "Bye");
+                }
+
+                // Give player 1 a checkmark
+                FillLPParameter(ref bracketText, matchIdentifier + LpStrings.T1 + LpStrings.P1, entrantList[currentSet.player1_id][0].Gamertag);
+                FillLPParameter(ref bracketText, matchIdentifier + LpStrings.T1 + LpStrings.P1 + LpStrings.Flag, entrantList[currentSet.player1_id][0].Flag);
+                FillLPParameter(ref bracketText, matchIdentifier + LpStrings.T1 + LpStrings.P2, entrantList[currentSet.player1_id][1].Gamertag);
+                FillLPParameter(ref bracketText, matchIdentifier + LpStrings.T1 + LpStrings.P2 + LpStrings.Flag, entrantList[currentSet.player1_id][1].Flag);
+
+                if (checkBoxFillByeWins.Checked == true)
+                {
+                    FillLPParameter(ref bracketText, matchIdentifier + LpStrings.T1 + LpStrings.Score, LpStrings.Checkmark);
+                    FillLPParameter(ref bracketText, matchIdentifier + LpStrings.Win, "1");
+                }
+            }
+            else
+            {
+                // Fill in the set normally
+                FillLPParameter(ref bracketText, matchIdentifier + LpStrings.T1 + LpStrings.P1, entrantList[currentSet.player1_id][0].Gamertag);
+                FillLPParameter(ref bracketText, matchIdentifier + LpStrings.T1 + LpStrings.P1 + LpStrings.Flag, entrantList[currentSet.player1_id][0].Flag);
+                FillLPParameter(ref bracketText, matchIdentifier + LpStrings.T1 + LpStrings.P2, entrantList[currentSet.player1_id][1].Gamertag);
+                FillLPParameter(ref bracketText, matchIdentifier + LpStrings.T1 + LpStrings.P2 + LpStrings.Flag, entrantList[currentSet.player1_id][1].Flag);
+                FillLPParameter(ref bracketText, matchIdentifier + LpStrings.T2 + LpStrings.P1, entrantList[currentSet.player2_id][0].Gamertag);
+                FillLPParameter(ref bracketText, matchIdentifier + LpStrings.T2 + LpStrings.P1 + LpStrings.Flag, entrantList[currentSet.player2_id][0].Flag);
+                FillLPParameter(ref bracketText, matchIdentifier + LpStrings.T2 + LpStrings.P2, entrantList[currentSet.player2_id][1].Gamertag);
+                FillLPParameter(ref bracketText, matchIdentifier + LpStrings.T2 + LpStrings.P2 + LpStrings.Flag, entrantList[currentSet.player2_id][1].Flag);
+
+
+                // Check for DQs
+                if (currentSet.entrant1wins == -1)
+                {
+                    FillLPParameter(ref bracketText, matchIdentifier + LpStrings.T1 + LpStrings.Score, "DQ");
+                    FillLPParameter(ref bracketText, matchIdentifier + LpStrings.T2 + LpStrings.Score, LpStrings.Checkmark);
+                }
+                else if (currentSet.entrant2wins == -1)
+                {
+                    FillLPParameter(ref bracketText, matchIdentifier + LpStrings.T2 + LpStrings.Score, "DQ");
+                    FillLPParameter(ref bracketText, matchIdentifier + LpStrings.T1 + LpStrings.Score, LpStrings.Checkmark);
+                }
+                else
+                {
+                    if (currentSet.round == roundList.Keys.Max() && currentSet.player1_prereq_match_id == currentSet.player2_prereq_match_id)
+                    {
+                        if (currentSet.entrant1wins != -99 && currentSet.entrant2wins != -99)
+                        {
+                            FillLPParameter(ref bracketText, matchIdentifier + LpStrings.T2 + LpStrings.Score, currentSet.entrant1wins.ToString());
+                            FillLPParameter(ref bracketText, matchIdentifier + LpStrings.T1 + LpStrings.Score, currentSet.entrant2wins.ToString());
+                        }
+                        else
+                        {
+                            if (currentSet.winner_id == currentSet.player1_id)
+                            {
+                                FillLPParameter(ref bracketText, matchIdentifier + LpStrings.T2 + LpStrings.Score, "{{win}}");
+                            }
+                            else if (currentSet.winner_id == currentSet.player2_id)
+                            {
+                                FillLPParameter(ref bracketText, matchIdentifier + LpStrings.T1 + LpStrings.Score, "{{win}}");
+                            }
+                        }
+                    }
+                    else
+                    {
+                        if (currentSet.entrant1wins != -99 && currentSet.entrant2wins != -99)
+                        {
+                            FillLPParameter(ref bracketText, matchIdentifier + LpStrings.T1 + LpStrings.Score, currentSet.entrant1wins.ToString());
+                            FillLPParameter(ref bracketText, matchIdentifier + LpStrings.T2 + LpStrings.Score, currentSet.entrant2wins.ToString());
+                        }
+                        else
+                        {
+                            if (currentSet.winner_id == currentSet.player1_id)
+                            {
+                                FillLPParameter(ref bracketText, matchIdentifier + LpStrings.T1 + LpStrings.Score, "{{win}}");
+                            }
+                            else if (currentSet.winner_id == currentSet.player2_id)
+                            {
+                                FillLPParameter(ref bracketText, matchIdentifier + LpStrings.T2 + LpStrings.Score, "{{win}}");
+                            }
+                        }
+                    }
+                }
+
+                // Set the winner
+                if (currentSet.winner_id == currentSet.player1_id)
+                {
+                    FillLPParameter(ref bracketText, matchIdentifier + LpStrings.Win, "1");
+                }
+                else if (currentSet.winner_id == currentSet.player2_id)
+                {
+                    FillLPParameter(ref bracketText, matchIdentifier + LpStrings.Win, "2");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Fill a standard DE final doubles bracket
+        /// </summary>
+        /// <returns>Final bracket text</returns>
+        private string FillFinalBracketDoubles()
+        {
+            // Error checking
+            if (!checkBoxFinalBracket.Checked || roundList.Count == 0) return string.Empty;
+
+            string finaltext = DEFINALDOUBLESSMWBRACKET;
+
+            int playerCount = roundList[1].Count * 2;
+
+            for (int i = 0; i < 10; i++)
+            {
+                if (Math.Pow(2, i) >= playerCount)
+                {
+                    // i is winners finals. We want grand finals, so add 1 to the round
+                    int gfRound = i + 1;
+
+                    if (roundList.ContainsKey(gfRound))
+                    {
+                        JSON_Structure.Match currentSet = roundList[gfRound][0];
+
+                        if (currentSet.player1_id != PLAYER_BYE)
+                        {
+                            FillLPParameter(ref finaltext, "r3m1t1p1", entrantList[currentSet.player1_id][0].Gamertag);
+                            FillLPParameter(ref finaltext, "r3m1t1p1flag", entrantList[currentSet.player1_id][0].Flag);
+                            FillLPParameter(ref finaltext, "r3m1t1p2", entrantList[currentSet.player1_id][1].Gamertag);
+                            FillLPParameter(ref finaltext, "r3m1t1p2flag", entrantList[currentSet.player1_id][1].Flag);
+                            FillLPParameter(ref finaltext, "r3m1t1score", currentSet.entrant1wins.ToString());
+                        }
+
+                        if (currentSet.player2_id != PLAYER_BYE)
+                        {
+                            FillLPParameter(ref finaltext, "r3m1t2p1", entrantList[currentSet.player2_id][0].Gamertag);
+                            FillLPParameter(ref finaltext, "r3m1t2p1flag", entrantList[currentSet.player2_id][0].Flag);
+                            FillLPParameter(ref finaltext, "r3m1t2p2", entrantList[currentSet.player2_id][1].Gamertag);
+                            FillLPParameter(ref finaltext, "r3m1t2p2flag", entrantList[currentSet.player2_id][1].Flag);
+                            FillLPParameter(ref finaltext, "r3m1t2score", currentSet.entrant2wins.ToString());
+                        }
+
+                        // Check for a bracket reset. Entrant order is reversed on reset.
+                        if (roundList[gfRound].Count == 2)
+                        {
+                            if (roundList[gfRound][1].player1_id != PLAYER_BYE) FillLPParameter(ref finaltext, "r3m2t2score", roundList[gfRound][1].entrant1wins.ToString());
+                            if (roundList[gfRound][1].player2_id != PLAYER_BYE) FillLPParameter(ref finaltext, "r3m2t1score", roundList[gfRound][1].entrant2wins.ToString());
+
+                            if (roundList[gfRound][1].winner_id == roundList[gfRound][1].player1_id) FillLPParameter(ref finaltext, "r3m1win", "2");
+                            else if (roundList[gfRound][1].winner_id == roundList[gfRound][1].player2_id) FillLPParameter(ref finaltext, "r3m1win", "1");
+                        }
+                        else
+                        {
+                            if (currentSet.winner_id == currentSet.player1_id) FillLPParameter(ref finaltext, "r3m1win", "1");
+                            else if (currentSet.winner_id == currentSet.player2_id) FillLPParameter(ref finaltext, "r3m1win", "2");
+                        }
+
+                        // Find and fill the three preceding matches
+                        JSON_Structure.Match wfSet = setIDsearch(currentSet.player1_prereq_match_id);
+                        if (wfSet != null)
+                        {
+                            FillSetDoubles(ref finaltext, "r1m1", wfSet);
+                        }
+
+                        JSON_Structure.Match lfSet = setIDsearch(currentSet.player2_prereq_match_id);
+                        if (lfSet != null)
+                        {
+                            FillSetDoubles(ref finaltext, "r2m1", lfSet);
+
+                            JSON_Structure.Match lsSet = setIDsearch(lfSet.player2_prereq_match_id);
+                            if (lsSet != null)
+                            {
+                                FillSetDoubles(ref finaltext, "l1m1", lsSet);
+                            }
+                        }
+                    }
+
+                    break;
+                }
+            }
+
+            return finaltext;
+        }
+        #endregion
 
         /// <summary>
         /// Find the specified liquipedia parameter and insert the specified value
@@ -811,78 +1291,30 @@ namespace challonge_to_liquipedia
                 lpText = lpText.Replace(match.Groups[1].Value + match.Groups[2].Value, match.Groups[1].Value + value + match.Groups[2].Value);
             }
         }
+        
+        /// <summary>
+        /// Searches for a specific set ID in the set list
+        /// </summary>
+        /// <param name="inputID">ID to find</param>
+        /// <returns>Set with the matching ID</returns>
+        private JSON_Structure.Match setIDsearch(int inputID)
+        {
+            foreach (List<JSON_Structure.Match> setList in roundList.Values)
+            {
+                foreach (JSON_Structure.Match set in setList)
+                {
+                    if (set.id == inputID)
+                    {
+                        return set;
+                    }
+                }
+            }
+
+            return null;
+        }
         #endregion
 
-        /// <summary>
-        /// Indicates whether an integer is a power of 2
-        /// </summary>
-        /// <param name="x"></param>
-        /// <returns></returns>
-        bool IsPowerOfTwo(int x)
-        {
-            return (x & (x - 1)) == 0;
-        }
-
-        /// <summary>
-        /// Retrieves a regex AKA database from Liquipedia, and parses it
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void buttonAKA_Click(object sender, EventArgs e)
-        {
-            WebClient client = new WebClient();
-
-            // Decide on the URL to use
-            string json = string.Empty;
-            if (radioButtonSmash.Checked)
-            {
-                json = client.DownloadString(SMASH_DB_URI);
-            }
-            else if (radioButtonFighters.Checked)
-            {
-                json = client.DownloadString(FIGHTERS_DB_URI);
-            }
-            else
-            {
-                return;
-            }
-
-            richTextBoxOutput.Text = json;
-
-            // Save the json to file, then read the file
-            if (radioButtonSmash.Checked)
-            {
-                if (!playerdb.SaveDatabase(json, PlayerDatabase.DbSource.Smash))
-                {
-                    richTextBoxOutput.Text = "Could not save Smash Database";
-                }
-
-                if (!playerdb.ReadDatabaseFromFile(PlayerDatabase.DbSource.Smash))
-                {
-                    richTextBoxOutput.Text = "Could not retrieve Smash Database";
-                }
-            }
-            else if (radioButtonFighters.Checked)
-            {
-                if (!playerdb.SaveDatabase(json, PlayerDatabase.DbSource.Fighters))
-                {
-                    richTextBoxOutput.Text = "Could not save Fighters Database";
-                }
-
-                if (!playerdb.ReadDatabaseFromFile(PlayerDatabase.DbSource.Fighters))
-                {
-                    richTextBoxOutput.Text = "Could not retrieve Fighters Database";
-                }
-            }
-            else
-            {
-                return;
-            }
-
-            // Update the revision number
-            UpdateRevID();
-        }
-
+        #region Player Database Methods
         /// <summary>
         /// Updates the revision number of the AKA database
         /// </summary>
@@ -902,6 +1334,11 @@ namespace challonge_to_liquipedia
             }
         }
 
+        /// <summary>
+        /// Opens the relevant database when the database radio button is changed
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void radioButtonDatabase_CheckedChanged(object sender, EventArgs e)
         {
             if (radioButtonSmash.Checked)
@@ -921,6 +1358,24 @@ namespace challonge_to_liquipedia
             else
             {
                 return;
+            }
+        }
+        #endregion
+
+        /// <summary>
+        /// Enables or disables the separator text box when singles or doubles is selected
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void radioButtonSinglesDoubles_CheckedChanged(object sender, EventArgs e)
+        {
+            if (radioButtonSingles.Checked)
+            {
+                textBoxSeparator.Enabled = false;
+            }
+            else
+            {
+                textBoxSeparator.Enabled = true;
             }
         }
     }

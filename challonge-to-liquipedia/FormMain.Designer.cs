@@ -52,12 +52,19 @@
             this.labelAkaDatabaseRev = new System.Windows.Forms.Label();
             this.radioButtonSmash = new System.Windows.Forms.RadioButton();
             this.radioButtonFighters = new System.Windows.Forms.RadioButton();
+            this.checkBoxFinalBracket = new System.Windows.Forms.CheckBox();
+            this.radioButtonSingles = new System.Windows.Forms.RadioButton();
+            this.panel1 = new System.Windows.Forms.Panel();
+            this.label4 = new System.Windows.Forms.Label();
+            this.textBoxSeparator = new System.Windows.Forms.TextBox();
+            this.radioButtonDoubles = new System.Windows.Forms.RadioButton();
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDownWinnersStart)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDownWinnersEnd)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDownWinnersOffset)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDownLosersOffset)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDownLosersEnd)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDownLosersStart)).BeginInit();
+            this.panel1.SuspendLayout();
             this.SuspendLayout();
             // 
             // textBoxPassword
@@ -283,11 +290,76 @@
             this.radioButtonFighters.UseVisualStyleBackColor = true;
             this.radioButtonFighters.CheckedChanged += new System.EventHandler(this.radioButtonDatabase_CheckedChanged);
             // 
+            // checkBoxFinalBracket
+            // 
+            this.checkBoxFinalBracket.AutoSize = true;
+            this.checkBoxFinalBracket.Checked = true;
+            this.checkBoxFinalBracket.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.checkBoxFinalBracket.Location = new System.Drawing.Point(592, 104);
+            this.checkBoxFinalBracket.Name = "checkBoxFinalBracket";
+            this.checkBoxFinalBracket.Size = new System.Drawing.Size(103, 17);
+            this.checkBoxFinalBracket.TabIndex = 16;
+            this.checkBoxFinalBracket.Text = "Fill Final Bracket";
+            this.checkBoxFinalBracket.UseVisualStyleBackColor = true;
+            // 
+            // radioButtonSingles
+            // 
+            this.radioButtonSingles.AutoSize = true;
+            this.radioButtonSingles.Checked = true;
+            this.radioButtonSingles.Location = new System.Drawing.Point(6, 3);
+            this.radioButtonSingles.Name = "radioButtonSingles";
+            this.radioButtonSingles.Size = new System.Drawing.Size(59, 17);
+            this.radioButtonSingles.TabIndex = 17;
+            this.radioButtonSingles.TabStop = true;
+            this.radioButtonSingles.Text = "Singles";
+            this.radioButtonSingles.UseVisualStyleBackColor = true;
+            this.radioButtonSingles.CheckedChanged += new System.EventHandler(this.radioButtonSinglesDoubles_CheckedChanged);
+            // 
+            // panel1
+            // 
+            this.panel1.Controls.Add(this.label4);
+            this.panel1.Controls.Add(this.textBoxSeparator);
+            this.panel1.Controls.Add(this.radioButtonDoubles);
+            this.panel1.Controls.Add(this.radioButtonSingles);
+            this.panel1.Location = new System.Drawing.Point(424, 60);
+            this.panel1.Name = "panel1";
+            this.panel1.Size = new System.Drawing.Size(276, 40);
+            this.panel1.TabIndex = 18;
+            // 
+            // label4
+            // 
+            this.label4.AutoSize = true;
+            this.label4.Location = new System.Drawing.Point(73, 5);
+            this.label4.Name = "label4";
+            this.label4.Size = new System.Drawing.Size(53, 13);
+            this.label4.TabIndex = 20;
+            this.label4.Text = "Separator";
+            // 
+            // textBoxSeparator
+            // 
+            this.textBoxSeparator.Location = new System.Drawing.Point(76, 18);
+            this.textBoxSeparator.Name = "textBoxSeparator";
+            this.textBoxSeparator.Size = new System.Drawing.Size(100, 20);
+            this.textBoxSeparator.TabIndex = 19;
+            // 
+            // radioButtonDoubles
+            // 
+            this.radioButtonDoubles.AutoSize = true;
+            this.radioButtonDoubles.Location = new System.Drawing.Point(6, 20);
+            this.radioButtonDoubles.Name = "radioButtonDoubles";
+            this.radioButtonDoubles.Size = new System.Drawing.Size(64, 17);
+            this.radioButtonDoubles.TabIndex = 18;
+            this.radioButtonDoubles.Text = "Doubles";
+            this.radioButtonDoubles.UseVisualStyleBackColor = true;
+            this.radioButtonDoubles.CheckedChanged += new System.EventHandler(this.radioButtonSinglesDoubles_CheckedChanged);
+            // 
             // FormMain
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(713, 469);
+            this.Controls.Add(this.panel1);
+            this.Controls.Add(this.checkBoxFinalBracket);
             this.Controls.Add(this.radioButtonFighters);
             this.Controls.Add(this.radioButtonSmash);
             this.Controls.Add(this.labelAkaDatabaseRev);
@@ -313,7 +385,7 @@
             this.Controls.Add(this.textBoxUsername);
             this.Controls.Add(this.textBoxPassword);
             this.Name = "FormMain";
-            this.Text = "Challonge to Liquipedia v1.2.1";
+            this.Text = "Challonge to Liquipedia v2.0.0";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.Form1_FormClosing);
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDownWinnersStart)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDownWinnersEnd)).EndInit();
@@ -321,6 +393,8 @@
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDownLosersOffset)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDownLosersEnd)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDownLosersStart)).EndInit();
+            this.panel1.ResumeLayout(false);
+            this.panel1.PerformLayout();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -352,6 +426,12 @@
         private System.Windows.Forms.Label labelAkaDatabaseRev;
         private System.Windows.Forms.RadioButton radioButtonSmash;
         private System.Windows.Forms.RadioButton radioButtonFighters;
+        private System.Windows.Forms.CheckBox checkBoxFinalBracket;
+        private System.Windows.Forms.RadioButton radioButtonSingles;
+        private System.Windows.Forms.Panel panel1;
+        private System.Windows.Forms.Label label4;
+        private System.Windows.Forms.TextBox textBoxSeparator;
+        private System.Windows.Forms.RadioButton radioButtonDoubles;
     }
 }
 
