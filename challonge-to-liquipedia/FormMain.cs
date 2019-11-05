@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Net;
 using System.IO;
+using System.IO.Compression;
 using challonge_to_liquipedia.JSON_Structure;
 using System.Text.RegularExpressions;
 
@@ -19,8 +20,8 @@ namespace challonge_to_liquipedia
         static string DEFINALSMWBRACKET = "{{DEFinalSmwBracket\r\n|tourneylink=\r\n|tourneyname=\r\n|l1placement=4\r\n|r2placement=3\r\n|r3loserplacement=2\r\n|r3winnerplacement=1\r\n\r\n<!-- FROM WINNERS -->\r\n|r1m1p1= |r1m1p1flag= |r1m1p1score=\r\n|r1m1p2= |r1m1p2flag= |r1m1p2score=\r\n|r1m1win=\r\n\r\n<!-- FROM LOSERS -->\r\n|l1m1p1= |l1m1p1flag= |l1m1p1score=\r\n|l1m1p2= |l1m1p2flag= |l1m1p2score=\r\n|l1m1win=\r\n\r\n<!-- LOSERS FINALS -->\r\n|r2m1p1= |r2m1p1flag= |r2m1p1score=\r\n|r2m1p2= |r2m1p2flag= |r2m1p2score=\r\n|r2m1win=\r\n\r\n<!-- GRAND FINALS -->\r\n|r3m1p1= |r3m1p1flag= |r3m1p1score= |r3m2p1score=\r\n|r3m1p2= |r3m1p2flag= |r3m1p2score= |r3m2p2score=\r\n|r3m1win=\r\n}}";
         static string DEFINALDOUBLESSMWBRACKET = "{{DEFinalDoublesSmwBracket\r\n|tourneylink=\r\n|tourneyname=\r\n|l1placement=4\r\n|r2placement=3\r\n|r3loserplacement=2\r\n|r3winnerplacement=1\r\n\r\n<!-- FROM WINNERS -->\r\n|r1m1t1p1= |r1m1t1p1flag=\r\n|r1m1t1p2= |r1m1t1p2flag= |r1m1t1score=\r\n|r1m1t2p1= |r1m1t2p1flag=\r\n|r1m1t2p2= |r1m1t2p2flag= |r1m1t2score=\r\n|r1m1win=\r\n\r\n<!-- FROM LOSERS -->\r\n|l1m1t1p1= |l1m1t1p1flag=\r\n|l1m1t1p2= |l1m1t1p2flag= |l1m1t1score=\r\n|l1m1t2p1= |l1m1t2p1flag=\r\n|l1m1t2p2= |l1m1t2p2flag= |l1m1t2score=\r\n|l1m1win=\r\n\r\n<!-- LOSERS FINALS -->\r\n|r2m1t1p1= |r2m1t1p1flag=\r\n|r2m1t1p2= |r2m1t1p2flag= |r2m1t1score=\r\n|r2m1t2p1= |r2m1t2p1flag=\r\n|r2m1t2p2= |r2m1t2p2flag= |r2m1t2score=\r\n|r2m1win=\r\n\r\n<!-- GRAND FINALS -->\r\n|r3m1t1p1= |r3m1t1p1flag=\r\n|r3m1t1p2= |r3m1t1p2flag= |r3m1t1score= |r3m2t1score=\r\n|r3m1t2p1= |r3m1t2p1flag=\r\n|r3m1t2p2= |r3m1t2p2flag= |r3m1t2score= |r3m2t2score=\r\n|r3m1win=\r\n}}";
 
-        static string SMASH_DB_URI = "http://wiki.teamliquid.net/smash/api.php?action=parse&page=Liquipedia:Players_Regex&prop=revid|wikitext&format=json";
-        static string FIGHTERS_DB_URI = "http://wiki.teamliquid.net/fighters/api.php?action=parse&page=Liquipedia:Players_Regex&prop=revid|wikitext&format=json";
+        static string SMASH_DB_URI = "http://liquipedia.net/smash/api.php?action=parse&page=Liquipedia:Players_Regex&prop=revid|wikitext&format=json";
+        static string FIGHTERS_DB_URI = "http://liquipedia.net/fighters/api.php?action=parse&page=Liquipedia:Players_Regex&prop=revid|wikitext&format=json";
 
         static string BASE_URI = "https://api.challonge.com/v1/tournaments/";
         static string EXTENSION_URI = ".json";
@@ -257,16 +258,21 @@ namespace challonge_to_liquipedia
         private void buttonAKA_Click(object sender, EventArgs e)
         {
             WebClient client = new WebClient();
+            client.Headers[HttpRequestHeader.AcceptEncoding] = "gzip";
 
             // Decide on the URL to use
             string json = string.Empty;
             if (radioButtonSmash.Checked)
             {
-                json = client.DownloadString(SMASH_DB_URI);
+                var responseStream = new GZipStream(client.OpenRead(SMASH_DB_URI), CompressionMode.Decompress);
+                var reader = new StreamReader(responseStream);
+                json = reader.ReadToEnd();
             }
             else if (radioButtonFighters.Checked)
             {
-                json = client.DownloadString(FIGHTERS_DB_URI);
+                var responseStream = new GZipStream(client.OpenRead(FIGHTERS_DB_URI), CompressionMode.Decompress);
+                var reader = new StreamReader(responseStream);
+                json = reader.ReadToEnd();
             }
             else
             {
@@ -697,16 +703,17 @@ namespace challonge_to_liquipedia
 
                     if (match.Success)
                     {
-                        Entrant player1 = new Entrant(RemoveTags(match.Groups[1].Value));
-                        Entrant player2 = new Entrant(RemoveTags(match.Groups[2].Value));
+                        Entrant player1 = new Entrant(RemoveTags(match.Groups[1].Value).Trim());
+                        Entrant player2 = new Entrant(RemoveTags(match.Groups[2].Value).Trim());
                         newParticipant.Add(player1);
                         newParticipant.Add(player2);
                     }
                     else
                     {
-                        Entrant player1 = new Entrant(inputName);
+                        Entrant player1 = new Entrant(inputName.Trim());
                         Entrant player2 = new Entrant(string.Empty);
                         newParticipant.Add(player1);
+                        newParticipant.Add(player2);
                     }
                 }
                 else

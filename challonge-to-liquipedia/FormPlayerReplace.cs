@@ -187,7 +187,7 @@ namespace challonge_to_liquipedia
                         entrantListRef.ElementAt(i).Value[1].Gamertag = tableDoubles[i].OldName2;
                     }
 
-                    entrantListRef.ElementAt(i).Value[0].Flag = tableDoubles[i].Flag2;
+                    entrantListRef.ElementAt(i).Value[0].Flag = tableDoubles[i].Flag;
                     entrantListRef.ElementAt(i).Value[1].Flag = tableDoubles[i].Flag2;
                 }
             }
