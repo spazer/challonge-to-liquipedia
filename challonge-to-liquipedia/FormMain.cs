@@ -110,6 +110,11 @@ namespace challonge_to_liquipedia
             string tournamentlink;
             string json = string.Empty;
 
+            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls
+                                                   | SecurityProtocolType.Tls11
+                                                   | SecurityProtocolType.Tls12
+                                                   | SecurityProtocolType.Ssl3;
+
             // Set the base URL for the tournament
             try
             {
