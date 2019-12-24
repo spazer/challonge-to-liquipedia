@@ -622,17 +622,6 @@ namespace challonge_to_liquipedia
 
                 if (displayRound > 0)
                 {
-                    //if (eventType == EventType.Singles)
-                    //{
-                    //    checkBoxWinners.Checked = true;
-                    //}
-                    //else
-                    //{
-                    //    checkBoxWinners.Checked = true;
-                    //}
-                    //
-                    //if (checkBoxLockWinners.Checked) continue;
-
                     // Remember lowest round number
                     if (numericUpDownWinnersStart.Value == 0)
                     {
@@ -655,17 +644,6 @@ namespace challonge_to_liquipedia
                 }
                 else if (displayRound < 0)
                 {
-                    //if (eventType == EventType.Singles)
-                    //{
-                    //    checkBoxLosers.Checked = true;
-                    //}
-                    //else
-                    //{
-                    //    checkBoxLosers.Checked = true;
-                    //}
-
-                    //if (checkBoxLockLosers.Checked) continue;
-
                     // Remember lowest round number
                     if (numericUpDownLosersStart.Value == 0)
                     {
@@ -700,6 +678,12 @@ namespace challonge_to_liquipedia
             {
                 string inputName = root.tournament.participants[i].participant.name;
                 List<Entrant> newParticipant = new List<Entrant>();
+
+                if (inputName == string.Empty)
+                {
+                    // Fallback
+                    inputName = root.tournament.participants[i].participant.display_name;
+                }
 
                 if (radioButtonDoubles.Checked && (textBoxSeparator.Text != string.Empty))
                 {
