@@ -155,6 +155,7 @@ namespace challonge_to_liquipedia
             {
                 // Only DE brackets are allowed
                 string downloadURL = tournamentlink + EXTENSION_URI;
+                client.Headers.Add("User-Agent: challonge-to-liquipedia");
                 client.QueryString.Add("include_participants", "1");
                 client.QueryString.Add("include_matches", "1");
                 json = client.DownloadString(downloadURL);
