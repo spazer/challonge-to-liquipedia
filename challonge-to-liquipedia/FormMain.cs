@@ -702,6 +702,7 @@ namespace challonge_to_liquipedia
             for (int i = 0; i < root.tournament.participants.Count(); i++)
             {
                 string inputName = root.tournament.participants[i].participant.name;
+                int placement = root.tournament.participants[i].participant.final_rank;
                 List<Entrant> newParticipant = new List<Entrant>();
 
                 if (inputName == string.Empty)
@@ -733,6 +734,7 @@ namespace challonge_to_liquipedia
                 else
                 {
                     Entrant player1 = new Entrant(RemoveTags(inputName));
+                    player1.Placement = placement;
                     newParticipant.Add(player1);
                 }
 
@@ -1368,6 +1370,7 @@ namespace challonge_to_liquipedia
                 {
                     richTextBoxOutput.Text = "Could not retrieve Smash Database";
                 }
+                UpdateRevID();
             }
             else if (radioButtonFighters.Checked)
             {
@@ -1375,6 +1378,7 @@ namespace challonge_to_liquipedia
                 {
                     richTextBoxOutput.Text = "Could not retrieve Fighters Database";
                 }
+                UpdateRevID();
             }
             else
             {
@@ -1398,6 +1402,33 @@ namespace challonge_to_liquipedia
             {
                 textBoxSeparator.Enabled = true;
             }
+        }
+
+        private void buttonCircuit_Click(object sender, EventArgs e)
+        {
+            int nOut = 0;
+            richTextBoxOutput.Clear();
+
+            List<List<Entrant>> placementList = entrantList.Values.OrderBy(x => x[0].Placement).ToList();
+            for (int i = 0; i < entrantList.Count; i++)
+            {
+                if (placementList[i][0].Placement == 0)
+                {
+                    continue;
+                }
+
+                // Assume there is only 1 player output their info
+                richTextBoxOutput.Text += "|p" + (nOut + 1) + "=" + placementList[i][0].Gamertag +
+                                          "|flag" + (nOut + 1) + "=" + placementList[i][0].Flag +
+                                          "\r\n";
+                nOut++;
+                if (nOut == numericUpDownCircuit.Value)
+                {
+                    break;
+                }
+            }
+
+            richTextBoxOutput.Text = richTextBoxOutput.Text.Trim();
         }
     }
 }

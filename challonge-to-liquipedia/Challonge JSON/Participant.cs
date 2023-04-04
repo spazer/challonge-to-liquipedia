@@ -16,7 +16,7 @@ namespace challonge_to_liquipedia.JSON_Structure
         public string created_at { get; set; }
         public string updated_at { get; set; }
         public object invite_email { get; set; }
-        public object final_rank { get; set; }
+        public int final_rank { get; set; }
         public object misc { get; set; }
         public object icon { get; set; }
         public bool on_waiting_list { get; set; }

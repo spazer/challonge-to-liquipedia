@@ -10,6 +10,7 @@ namespace challonge_to_liquipedia
     {
         private string gamertag;
         private string flag;
+        private int placement;
 
         #region Constructors
         public Entrant(string gamertag)
@@ -36,6 +37,12 @@ namespace challonge_to_liquipedia
         {
             get { return flag; }
             set { flag = value; }
+        }
+
+        public int Placement
+        {
+            get { return placement; }
+            set { placement = value; }
         }
         #endregion
     }
